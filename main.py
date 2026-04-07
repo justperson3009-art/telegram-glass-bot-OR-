@@ -123,11 +123,11 @@ def main():
         logger.info("Бэкапы созданы при запуске")
     except Exception as e:
         logger.warning(f"Не удалось создать бэкап: {e}")
-    
+
     app = create_app()
     logger.info("🤖 Бот запущен...")
     print("🤖 Бот запущен...")
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":
