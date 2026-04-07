@@ -291,11 +291,10 @@ async def admin_back_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 def get_admin_handlers():
-    """Возвращает обработчики админ-панели"""
+    """Возвращает обработчики админ-панели (без MessageHandler!)"""
     return [
         CommandHandler("admin", admin_panel),
         CallbackQueryHandler(admin_callback, pattern="^admin_"),
         CallbackQueryHandler(create_backup_callback, pattern="^admin_create_backup"),
         CallbackQueryHandler(admin_back_callback, pattern="^admin_back$"),
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_input),
     ]
