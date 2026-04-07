@@ -1,0 +1,1516 @@
+{
+  "iphone_6_7_8_se_group": [
+    "iPhone 6",
+    "iPhone 6S",
+    "iPhone 7",
+    "iPhone 8",
+    "iPhone SE (2nd gen)"
+  ],
+  "iphone_7_8_plus_group": [
+    "iPhone 7 Plus",
+    "iPhone 8 Plus"
+  ],
+  "iphone_x_xs_11_pro_group": [
+    "iPhone X",
+    "iPhone XS",
+    "iPhone 11 Pro"
+  ],
+  "iphone_xr_11_group": [
+    "iPhone XR",
+    "iPhone 11"
+  ],
+  "iphone_xsmax_11promax_group": [
+    "iPhone XS Max",
+    "iPhone 11 Pro Max"
+  ],
+  "iphone_12_group": [
+    "iPhone 12",
+    "iPhone 12 Pro"
+  ],
+  "iphone_13_14_group": [
+    "iPhone 13",
+    "iPhone 13 Pro",
+    "iPhone 14"
+  ],
+  "iphone_13promax_14plus_group": [
+    "iPhone 13 Pro Max",
+    "iPhone 14 Plus"
+  ],
+  "iphone_15_group": [
+    "iPhone 15",
+    "iPhone 15 Pro",
+    "iPhone 15 Plus",
+    "iPhone 15 Pro Max"
+  ],
+  "samsung_a02_group": [
+    "Samsung Galaxy A02",
+    "Samsung Galaxy A02s"
+  ],
+  "samsung_a03_group": [
+    "Samsung Galaxy A03",
+    "Samsung Galaxy A03s"
+  ],
+  "samsung_a04_group": [
+    "Samsung Galaxy A04",
+    "Samsung Galaxy A04e",
+    "Samsung Galaxy A04s"
+  ],
+  "samsung_a10_a12_group": [
+    "Samsung Galaxy A10",
+    "Samsung Galaxy A12"
+  ],
+  "samsung_a15_a24_group": [
+    "Samsung Galaxy A15",
+    "Samsung Galaxy A24"
+  ],
+  "samsung_a22_group": [
+    "Samsung Galaxy A22",
+    "Samsung Galaxy A22 5G"
+  ],
+  "samsung_a23_a32_group": [
+    "Samsung Galaxy A23",
+    "Samsung Galaxy A32 4G",
+    "Samsung Galaxy A32 5G"
+  ],
+  "samsung_a34_a35_group": [
+    "Samsung Galaxy A34",
+    "Samsung Galaxy A35"
+  ],
+  "samsung_a52_a53_group": [
+    "Samsung Galaxy A52",
+    "Samsung Galaxy A53"
+  ],
+  "samsung_s21_group": [
+    "Samsung Galaxy S21",
+    "Samsung Galaxy S21 FE"
+  ],
+  "samsung_s22_group": [
+    "Samsung Galaxy S22",
+    "Samsung Galaxy S22 Plus",
+    "Samsung Galaxy S22 Ultra"
+  ],
+  "samsung_s23_group": [
+    "Samsung Galaxy S23",
+    "Samsung Galaxy S23 FE",
+    "Samsung Galaxy S23 Plus",
+    "Samsung Galaxy S23 Ultra"
+  ],
+  "samsung_s24_group": [
+    "Samsung Galaxy S24",
+    "Samsung Galaxy S24 FE",
+    "Samsung Galaxy S24 Plus",
+    "Samsung Galaxy S24 Ultra"
+  ],
+  "xiaomi_redmi_note10_group": [
+    "Redmi Note 10",
+    "Redmi Note 10S",
+    "Redmi Note 10 Pro",
+    "Poco X3"
+  ],
+  "xiaomi_redmi_note11_group": [
+    "Redmi Note 11",
+    "Redmi Note 11S",
+    "Redmi Note 11 Pro"
+  ],
+  "xiaomi_redmi_note12_group": [
+    "Redmi Note 12",
+    "Redmi Note 12 Pro",
+    "Redmi Note 12 4G"
+  ],
+  "xiaomi_redmi_note13_group": [
+    "Redmi Note 13",
+    "Redmi Note 13 Pro"
+  ],
+  "xiaomi_poco_m6_group": [
+    "Xiaomi Poco M6",
+    "Xiaomi Poco M6 Pro"
+  ],
+  "xiaomi_mi11_group": [
+    "Xiaomi Mi 11",
+    "Xiaomi Mi 11 Lite",
+    "Xiaomi Mi 11 Pro",
+    "Xiaomi Mi 11 Ultra"
+  ],
+  "xiaomi_k40_group": [
+    "Redmi K40",
+    "Redmi K40 Pro",
+    "Poco F3"
+  ],
+  "vivo_y33s_group": [
+    "Vivo Y33s",
+    "Vivo Y35"
+  ],
+  "realme_c35_group": [
+    "Realme C35",
+    "OPPO A11"
+  ],
+  "huawei_nova_group": [
+    "Huawei Nova 8",
+    "Huawei Nova 10",
+    "Huawei Nova 7 SE"
+  ],
+  "samsung_a32_group": [
+    "Samsung Galaxy A32 4G",
+    "Samsung Galaxy A32 5G"
+  ],
+  "xiaomi_poco_m4_group": [
+    "POCO M4",
+    "POCO M4 Pro"
+  ],
+  "xiaomi_poco_m5_group": [
+    "POCO M5",
+    "POCO M5s"
+  ],
+  "xiaomi_poco_x3_group": [
+    "POCO X3",
+    "POCO X3 Pro"
+  ],
+  "xiaomi_poco_x4_group": [
+    "POCO X4",
+    "POCO X4 Pro"
+  ],
+  "xiaomi_mi12_group": [
+    "Xiaomi Mi 12",
+    "Xiaomi Mi 12 Lite",
+    "Xiaomi Mi 12 Pro",
+    "Xiaomi Mi 12T",
+    "Xiaomi Mi 12T Pro"
+  ],
+  "xiaomi_mi13_group": [
+    "Mi 13",
+    "Mi 13 Pro"
+  ],
+  "oppo_a53_group": [
+    "OPPO A53",
+    "Realme C21"
+  ],
+  "oppo_a54_group": [
+    "OPPO A54",
+    "Realme C25"
+  ],
+  "oppo_a74_group": [
+    "OPPO A74",
+    "Realme 7i"
+  ],
+  "vivo_v21_group": [
+    "Vivo V21",
+    "Vivo V21 5G",
+    "Vivo V21e",
+    "Vivo V21e 5G",
+    "Vivo S10"
+  ],
+  "vivo_v23_group": [
+    "Vivo V23",
+    "Vivo V23 5G",
+    "Vivo V23e",
+    "Vivo V23 Pro",
+    "Vivo S12"
+  ],
+  "google_pixel_6_group": [
+    "Google Pixel 6",
+    "Google Pixel 6 Pro",
+    "Google Pixel 6a"
+  ],
+  "google_pixel_7_group": [
+    "Google Pixel 7",
+    "Google Pixel 7 Pro",
+    "Google Pixel 7a"
+  ],
+  "google_pixel_8_group": [
+    "Google Pixel 8",
+    "Google Pixel 8 Pro"
+  ],
+  "motorola_g_series_group": [
+    "Moto G9",
+    "Moto G10",
+    "Moto G20",
+    "Moto G30"
+  ],
+  "motorola_edge_group": [
+    "Moto Edge",
+    "Moto Edge Plus",
+    "Moto Edge S",
+    "Moto Edge 20",
+    "Moto Edge 20 Pro"
+  ],
+  "honor_group": [
+    "Honor 8A",
+    "Honor 9X",
+    "Honor 10 Lite"
+  ],
+  "tecno_pop_series_group": [
+    "Tecno POP 5",
+    "Tecno POP 5 LTE",
+    "Tecno POP 5 Go",
+    "Tecno POP 6",
+    "Tecno POP 6 Go"
+  ],
+  "tecno_spark_go_series_group": [
+    "Tecno Spark Go",
+    "Tecno Spark Go 2020",
+    "Tecno Spark Go 2021",
+    "Tecno Spark Go 2022",
+    "Tecno Spark Go 2023"
+  ],
+  "tecno_spark_7_series_group": [
+    "Tecno Spark 7",
+    "Tecno Spark 7P",
+    "Tecno Spark 7T"
+  ],
+  "tecno_spark_8_series_group": [
+    "Tecno Spark 8",
+    "Tecno Spark 8C",
+    "Tecno Spark 8P"
+  ],
+  "tecno_spark_9_series_group": [
+    "Tecno Spark 9",
+    "Tecno Spark 9T",
+    "Tecno Spark 9 Pro"
+  ],
+  "tecno_spark_10_series_group": [
+    "Tecno Spark 10",
+    "Tecno Spark 10C",
+    "Tecno Spark 10 4G",
+    "Tecno Spark 10 5G",
+    "Tecno Spark 10 Pro"
+  ],
+  "tecno_spark_20_series_group": [
+    "Tecno Spark 20",
+    "Tecno Spark 20C",
+    "Tecno Spark 20 Pro",
+    "Tecno Spark 20 Pro Plus"
+  ],
+  "tecno_pova_2_3_group": [
+    "Tecno Pova 2",
+    "Tecno Pova 3"
+  ],
+  "tecno_pova_4_series_group": [
+    "Tecno Pova 4",
+    "Tecno Pova 4 Pro"
+  ],
+  "tecno_pova_5_series_group": [
+    "Tecno Pova 5",
+    "Tecno Pova 5 Pro"
+  ],
+  "tecno_camon_17_series_group": [
+    "Tecno Camon 17",
+    "Tecno Camon 17P",
+    "Tecno Camon 17 Pro"
+  ],
+  "tecno_camon_18_series_group": [
+    "Tecno Camon 18",
+    "Tecno Camon 18P",
+    "Tecno Camon 18T",
+    "Tecno Camon 18 Premier"
+  ],
+  "tecno_camon_19_series_group": [
+    "Tecno Camon 19",
+    "Tecno Camon 19 Neo",
+    "Tecno Camon 19 Pro"
+  ],
+  "tecno_camon_20_series_group": [
+    "Tecno Camon 20",
+    "Tecno Camon 20 Pro",
+    "Tecno Camon 20 Premier"
+  ],
+  "tecno_camon_30_series_group": [
+    "Tecno Camon 30",
+    "Tecno Camon 30 5G",
+    "Tecno Camon 30 Pro",
+    "Tecno Camon 30 Premier"
+  ],
+  "tecno_phantom_series_group": [
+    "Tecno Phantom X",
+    "Tecno Phantom X2",
+    "Tecno Phantom X2 Pro",
+    "Tecno Phantom V Fold",
+    "Tecno Phantom V Flip"
+  ],
+  "tecno_hot_12_series_group": [
+    "Tecno Hot 12",
+    "Tecno Hot 12 Play",
+    "Tecno Hot 12i"
+  ],
+  "tecno_hot_20_series_group": [
+    "Tecno Hot 20",
+    "Tecno Hot 20i",
+    "Tecno Hot 20S"
+  ],
+  "tecno_hot_30_series_group": [
+    "Tecno Hot 30",
+    "Tecno Hot 30i",
+    "Tecno Hot 30 Play"
+  ],
+  "tecno_hot_40_series_group": [
+    "Tecno Hot 40",
+    "Tecno Hot 40i",
+    "Tecno Hot 40 Pro"
+  ],
+  "tecno_spark_11_series_group": [
+    "Tecno Spark 11",
+    "Tecno Spark 11 Pro",
+    "Tecno Spark 11 5G",
+    "Tecno Spark 11 Pro+"
+  ],
+  "tecno_spark_30_series_group": [
+    "Tecno Spark 30",
+    "Tecno Spark 30C",
+    "Tecno Spark 30 5G",
+    "Tecno Spark 30 Pro"
+  ],
+  "tecno_pova_neo_series_group": [
+    "Tecno Pova Neo",
+    "Tecno Pova Neo 2",
+    "Tecno Pova Neo 3"
+  ],
+  "tecno_pova_6_series_group": [
+    "Tecno Pova 6",
+    "Tecno Pova 6 Pro",
+    "Tecno Pova 6 Neo"
+  ],
+  "tecno_camon_40_series_group": [
+    "Tecno Camon 40",
+    "Tecno Camon 40 Pro",
+    "Tecno Camon 40 Premier"
+  ],
+  "tecno_hot_13_series_group": [
+    "Tecno Hot 13",
+    "Tecno Hot 13i",
+    "Tecno Hot 13 Pro"
+  ],
+  "infinix_hot_12_series_group": [
+    "Infinix Hot 12",
+    "Infinix Hot 12 Play",
+    "Infinix Hot 12i"
+  ],
+  "infinix_hot_20_series_group": [
+    "Infinix Hot 20",
+    "Infinix Hot 20i",
+    "Infinix Hot 20 Play",
+    "Infinix Hot 20S",
+    "Infinix Hot 20 5G"
+  ],
+  "infinix_hot_30_series_group": [
+    "Infinix Hot 30",
+    "Infinix Hot 30i",
+    "Infinix Hot 30 Play",
+    "Infinix Hot 30 5G"
+  ],
+  "infinix_hot_40_series_group": [
+    "Infinix Hot 40",
+    "Infinix Hot 40i",
+    "Infinix Hot 40 Pro",
+    "Infinix Hot 40 Pro+"
+  ],
+  "infinix_note_10_series_group": [
+    "Infinix Note 10",
+    "Infinix Note 10 Pro",
+    "Infinix Note 10S"
+  ],
+  "infinix_note_11_series_group": [
+    "Infinix Note 11",
+    "Infinix Note 11S",
+    "Infinix Note 11 Pro",
+    "Infinix Note 11i"
+  ],
+  "infinix_note_12_series_group": [
+    "Infinix Note 12",
+    "Infinix Note 12i",
+    "Infinix Note 12 Pro",
+    "Infinix Note 12 VIP",
+    "Infinix Note 12 G96"
+  ],
+  "infinix_note_30_series_group": [
+    "Infinix Note 30",
+    "Infinix Note 30i",
+    "Infinix Note 30 5G",
+    "Infinix Note 30 Pro",
+    "Infinix Note 30 VIP"
+  ],
+  "infinix_zero_30_series_group": [
+    "Infinix Zero 30",
+    "Infinix Zero 30 5G",
+    "Infinix Zero 30 4G"
+  ],
+  "infinix_zero_40_series_group": [
+    "Infinix Zero 40",
+    "Infinix Zero 40 5G"
+  ],
+  "infinix_gt_series_group": [
+    "Infinix GT 10 Pro",
+    "Infinix GT 20 Pro"
+  ],
+  "infinix_smart_8_series_group": [
+    "Infinix Smart 8",
+    "Infinix Smart 8 HD",
+    "Infinix Smart 8 Pro"
+  ],
+  "realme_5_series_group": [
+    "Realme 5",
+    "Realme 5 Pro",
+    "Realme 5i",
+    "Realme 5s"
+  ],
+  "realme_6_series_group": [
+    "Realme 6",
+    "Realme 6 Pro",
+    "Realme 6i",
+    "Realme 6s"
+  ],
+  "realme_7_series_group": [
+    "Realme 7",
+    "Realme 7 Pro",
+    "Realme 7i",
+    "Realme 7 5G"
+  ],
+  "realme_8_series_group": [
+    "Realme 8",
+    "Realme 8 Pro",
+    "Realme 8i",
+    "Realme 8 5G",
+    "Realme 8s 5G"
+  ],
+  "realme_9_series_group": [
+    "Realme 9",
+    "Realme 9 Pro",
+    "Realme 9 Pro+",
+    "Realme 9i",
+    "Realme 9 5G"
+  ],
+  "realme_10_series_group": [
+    "Realme 10",
+    "Realme 10 Pro",
+    "Realme 10 Pro+",
+    "Realme 10 5G",
+    "Realme 10s"
+  ],
+  "realme_11_series_group": [
+    "Realme 11",
+    "Realme 11 Pro",
+    "Realme 11 Pro+",
+    "Realme 11 5G"
+  ],
+  "realme_12_series_group": [
+    "Realme 12",
+    "Realme 12 Pro",
+    "Realme 12 Pro+",
+    "Realme 12 5G",
+    "Realme 12+ 5G"
+  ],
+  "realme_gt_series_group": [
+    "Realme GT",
+    "Realme GT Master Edition",
+    "Realme GT Neo",
+    "Realme GT Neo 2",
+    "Realme GT Neo 3"
+  ],
+  "realme_narzo_30_series_group": [
+    "Realme Narzo 30",
+    "Realme Narzo 30 5G",
+    "Realme Narzo 30 Pro 5G"
+  ],
+  "realme_narzo_50_series_group": [
+    "Realme Narzo 50",
+    "Realme Narzo 50A",
+    "Realme Narzo 50i",
+    "Realme Narzo 50 Pro 5G"
+  ],
+  "realme_narzo_60_series_group": [
+    "Realme Narzo 60",
+    "Realme Narzo 60 5G",
+    "Realme Narzo 60 Pro 5G"
+  ],
+  "realme_c11_series_group": [
+    "Realme C11",
+    "Realme C11 2021"
+  ],
+  "realme_c15_series_group": [
+    "Realme C15",
+    "Realme C15 Qualcomm Edition"
+  ],
+  "realme_c21_series_group": [
+    "Realme C21",
+    "Realme C21Y",
+    "Realme C21i"
+  ],
+  "realme_c25_series_group": [
+    "Realme C25",
+    "Realme C25s",
+    "Realme C25Y"
+  ],
+  "realme_c30_series_group": [
+    "Realme C30",
+    "Realme C30s",
+    "Realme C31",
+    "Realme C33",
+    "Realme C35"
+  ],
+  "realme_c40_series_group": [
+    "Realme C40",
+    "Realme C51",
+    "Realme C53",
+    "Realme C55"
+  ],
+  "realme_c60_series_group": [
+    "Realme C61",
+    "Realme C63",
+    "Realme C65"
+  ],
+  "realme_narzo_60_pro_group": [
+    "Realme Narzo 60 Pro 5G",
+    "Realme Narzo 60 Pro"
+  ],
+  "realme_narzo_50_pro_group": [
+    "Realme Narzo 50 Pro 5G",
+    "Realme Narzo 50 Pro"
+  ],
+  "realme_12_pro_plus_group": [
+    "Realme 12 Pro+",
+    "Realme 12 Pro+ 5G"
+  ],
+  "realme_12_pro_group": [
+    "Realme 12 Pro",
+    "Realme 12 Pro 5G"
+  ],
+  "iqoo_neo_group": [
+    "iQOO Neo 9",
+    "iQOO Neo 9 Pro",
+    "iQOO Neo 8",
+    "iQOO Neo 8 Pro",
+    "iQOO Neo 7"
+  ],
+  "iqoo_z_group": [
+    "iQOO Z9",
+    "iQOO Z9 5G",
+    "iQOO Z7",
+    "iQOO Z7 5G",
+    "iQOO Z6"
+  ],
+  "iqoo_number_group": [
+    "iQOO 12",
+    "iQOO 12 Pro",
+    "iQOO 11",
+    "iQOO 11 Pro",
+    "iQOO 10"
+  ],
+  "vivo_x100_group": [
+    "Vivo X100",
+    "Vivo X100 Pro",
+    "Vivo X100 Pro+",
+    "Vivo X90",
+    "Vivo X90 Pro"
+  ],
+  "vivo_x80_group": [
+    "Vivo X80",
+    "Vivo X80 Pro",
+    "Vivo X70",
+    "Vivo X70 Pro",
+    "Vivo X70 Pro+"
+  ],
+  "vivo_x60_group": [
+    "Vivo X60",
+    "Vivo X60 Pro",
+    "Vivo X60 Pro+",
+    "Vivo X50",
+    "Vivo X50 Pro"
+  ],
+  "vivo_y100_group": [
+    "Vivo Y100",
+    "Vivo Y100 5G",
+    "Vivo Y100i",
+    "Vivo Y100i Power",
+    "Vivo Y78"
+  ],
+  "vivo_y77_group": [
+    "Vivo Y77",
+    "Vivo Y77 5G",
+    "Vivo Y77e",
+    "Vivo Y77t"
+  ],
+  "vivo_y36_group": [
+    "Vivo Y36",
+    "Vivo Y36 5G",
+    "Vivo Y35+ 5G"
+  ],
+  "vivo_y35_group": [
+    "Vivo Y35",
+    "Vivo Y35 2022",
+    "Vivo Y33s",
+    "Vivo Y33t"
+  ],
+  "vivo_y22_group": [
+    "Vivo Y22",
+    "Vivo Y22s",
+    "Vivo Y21",
+    "Vivo Y21s",
+    "Vivo Y21t"
+  ],
+  "vivo_y20_group": [
+    "Vivo Y20",
+    "Vivo Y20 2021",
+    "Vivo Y20s",
+    "Vivo Y20G",
+    "Vivo Y12"
+  ],
+  "vivo_v30_group": [
+    "Vivo V30",
+    "Vivo V30 5G",
+    "Vivo V30 Lite",
+    "Vivo V30 Lite 5G",
+    "Vivo V30 Pro"
+  ],
+  "vivo_v29_group": [
+    "Vivo V29",
+    "Vivo V29 5G",
+    "Vivo V29e",
+    "Vivo V29e 5G",
+    "Vivo V29 Lite"
+  ],
+  "vivo_v27_group": [
+    "Vivo V27",
+    "Vivo V27 5G",
+    "Vivo V27e",
+    "Vivo V27 Pro",
+    "Vivo S16"
+  ],
+  "vivo_v25_group": [
+    "Vivo V25",
+    "Vivo V25 5G",
+    "Vivo V25e",
+    "Vivo V25 Pro",
+    "Vivo S15"
+  ],
+  "vivo_v20_group": [
+    "Vivo V20",
+    "Vivo V20 2021",
+    "Vivo V20 SE",
+    "Vivo V20 Pro"
+  ],
+  "iqoo_neo_3_group": [
+    "iQOO Neo 3",
+    "iQOO Neo 3 5G"
+  ],
+  "iqoo_neo_2_group": [
+    "iQOO Neo 2",
+    "iQOO Neo 2 5G"
+  ],
+  "iqoo_neo_group_old": [
+    "iQOO Neo",
+    "iQOO Neo 855"
+  ],
+  "vivo_x21_group": [
+    "Vivo X21",
+    "Vivo X21 UD",
+    "Vivo X21i"
+  ],
+  "vivo_x20_group": [
+    "Vivo X20",
+    "Vivo X20 Plus UD"
+  ],
+  "vivo_x9_group": [
+    "Vivo X9",
+    "Vivo X9 Plus"
+  ],
+  "vivo_x7_group": [
+    "Vivo X7",
+    "Vivo X7 Plus"
+  ],
+  "vivo_x6_group": [
+    "Vivo X6",
+    "Vivo X6 Plus"
+  ],
+  "vivo_v11_group": [
+    "Vivo V11",
+    "Vivo V11 Pro"
+  ],
+  "vivo_v7_group": [
+    "Vivo V7",
+    "Vivo V7+"
+  ],
+  "vivo_v5_group": [
+    "Vivo V5",
+    "Vivo V5s",
+    "Vivo V5 Plus"
+  ],
+  "vivo_v3_group": [
+    "Vivo V3",
+    "Vivo V3 Max"
+  ],
+  "vivo_y91_group": [
+    "Vivo Y91",
+    "Vivo Y91i",
+    "Vivo Y91C"
+  ],
+  "vivo_y93_group": [
+    "Vivo Y93",
+    "Vivo Y93i"
+  ],
+  "vivo_y81_group": [
+    "Vivo Y81",
+    "Vivo Y81i"
+  ],
+  "honor_y5_group": [
+    "Honor Y5 2017",
+    "Honor Y5 2018",
+    "Honor Y5 Lite"
+  ],
+  "honor_y6_group": [
+    "Honor Y6 2017",
+    "Honor Y6 2018",
+    "Honor Y6 2019"
+  ],
+  "honor_y7_group": [
+    "Honor Y7 2017",
+    "Honor Y7 2018",
+    "Honor Y7 2019"
+  ],
+  "honor_y9_group": [
+    "Honor Y9 2018",
+    "Honor Y9 2019",
+    "Honor Y9 Prime"
+  ],
+  "honor_8x_group": [
+    "Honor 8X",
+    "Honor 8X Max"
+  ],
+  "honor_9x_group": [
+    "Honor 9X",
+    "Honor 9X Pro"
+  ],
+  "honor_10_group": [
+    "Honor 10",
+    "Honor 10 Lite"
+  ],
+  "honor_20_group": [
+    "Honor 20",
+    "Honor 20 Lite",
+    "Honor 20 Pro"
+  ],
+  "honor_30_group": [
+    "Honor 30",
+    "Honor 30 Pro",
+    "Honor 30 Pro+"
+  ],
+  "honor_view10_group": [
+    "Honor View 10",
+    "Honor View 10 Lite"
+  ],
+  "honor_view20_group": [
+    "Honor View 20",
+    "Honor View 20 Lite"
+  ],
+  "honor_view30_group": [
+    "Honor View 30",
+    "Honor View 30 Pro"
+  ],
+  "honor_p8_group": [
+    "Honor P8",
+    "Honor P8 Lite",
+    "Honor P8 Max"
+  ],
+  "honor_p9_group": [
+    "Honor P9",
+    "Honor P9 Lite",
+    "Honor P9 Plus"
+  ],
+  "honor_p10_group": [
+    "Honor P10",
+    "Honor P10 Lite",
+    "Honor P10 Plus"
+  ],
+  "honor_p20_group": [
+    "Honor P20",
+    "Honor P20 Lite",
+    "Honor P20 Pro"
+  ],
+  "honor_p30_group": [
+    "Honor P30",
+    "Honor P30 Lite",
+    "Honor P30 Pro"
+  ],
+  "honor_p40_group": [
+    "Honor P40",
+    "Honor P40 Lite",
+    "Honor P40 Pro",
+    "Honor P40 Pro+"
+  ],
+  "huawei_y5_group": [
+    "Huawei Y5 2017",
+    "Huawei Y5 2018",
+    "Huawei Y5 2019",
+    "Huawei Y5 Lite",
+    "Huawei Y5 Prime"
+  ],
+  "huawei_y6_group": [
+    "Huawei Y6 2017",
+    "Huawei Y6 2018",
+    "Huawei Y6 2019",
+    "Huawei Y6 Pro"
+  ],
+  "huawei_y7_group": [
+    "Huawei Y7 2017",
+    "Huawei Y7 2018",
+    "Huawei Y7 2019",
+    "Huawei Y7 Prime",
+    "Huawei Y7 Pro"
+  ],
+  "huawei_y9_group": [
+    "Huawei Y9 2018",
+    "Huawei Y9 2019",
+    "Huawei Y9 Prime",
+    "Huawei Y9s"
+  ],
+  "huawei_nova2_group": [
+    "Huawei Nova 2",
+    "Huawei Nova 2 Plus"
+  ],
+  "huawei_nova3_group": [
+    "Huawei Nova 3",
+    "Huawei Nova 3i"
+  ],
+  "huawei_nova4_group": [
+    "Huawei Nova 4",
+    "Huawei Nova 4e"
+  ],
+  "huawei_nova5_group": [
+    "Huawei Nova 5",
+    "Huawei Nova 5i",
+    "Huawei Nova 5T"
+  ],
+  "huawei_nova6_group": [
+    "Huawei Nova 6",
+    "Huawei Nova 6 5G",
+    "Huawei Nova 6 SE"
+  ],
+  "huawei_nova7_group": [
+    "Huawei Nova 7",
+    "Huawei Nova 7i",
+    "Huawei Nova 7 5G",
+    "Huawei Nova 7 SE"
+  ],
+  "huawei_nova8_group": [
+    "Huawei Nova 8",
+    "Huawei Nova 8i",
+    "Huawei Nova 8 SE",
+    "Huawei Nova 8 Pro"
+  ],
+  "huawei_nova9_group": [
+    "Huawei Nova 9",
+    "Huawei Nova 9 SE",
+    "Huawei Nova 9 Pro"
+  ],
+  "huawei_nova10_group": [
+    "Huawei Nova 10",
+    "Huawei Nova 10 SE",
+    "Huawei Nova 10 Pro"
+  ],
+  "huawei_mate9_group": [
+    "Huawei Mate 9",
+    "Huawei Mate 9 Pro"
+  ],
+  "huawei_mate10_group": [
+    "Huawei Mate 10",
+    "Huawei Mate 10 Pro",
+    "Huawei Mate 10 Lite"
+  ],
+  "huawei_mate20_group": [
+    "Huawei Mate 20",
+    "Huawei Mate 20 Pro",
+    "Huawei Mate 20 X",
+    "Huawei Mate 20 Lite"
+  ],
+  "huawei_mate30_group": [
+    "Huawei Mate 30",
+    "Huawei Mate 30 Pro",
+    "Huawei Mate 30 Lite",
+    "Huawei Mate 30 RS Porsche Design"
+  ],
+  "huawei_mate40_group": [
+    "Huawei Mate 40",
+    "Huawei Mate 40 Pro",
+    "Huawei Mate 40 Pro+",
+    "Huawei Mate 40 RS Porsche Design"
+  ],
+  "huawei_mate50_group": [
+    "Huawei Mate 50",
+    "Huawei Mate 50 Pro",
+    "Huawei Mate 50 RS Porsche Design"
+  ],
+  "huawei_p8_group": [
+    "Huawei P8",
+    "Huawei P8 Lite",
+    "Huawei P8 Max"
+  ],
+  "huawei_p9_group": [
+    "Huawei P9",
+    "Huawei P9 Lite",
+    "Huawei P9 Plus"
+  ],
+  "huawei_p10_group": [
+    "Huawei P10",
+    "Huawei P10 Plus",
+    "Huawei P10 Lite"
+  ],
+  "huawei_p20_group": [
+    "Huawei P20",
+    "Huawei P20 Pro",
+    "Huawei P20 Lite"
+  ],
+  "huawei_p40_group": [
+    "Huawei P40",
+    "Huawei P40 Pro",
+    "Huawei P40 Lite",
+    "Huawei P40 Lite E"
+  ],
+  "huawei_p50_group": [
+    "Huawei P50",
+    "Huawei P50 Pro",
+    "Huawei P50 Pocket",
+    "Huawei P50 Lite"
+  ],
+  "huawei_p60_group": [
+    "Huawei P60",
+    "Huawei P60 Pro",
+    "Huawei P60 Art"
+  ],
+  "oneplus_3_group": [
+    "OnePlus 3",
+    "OnePlus 3T"
+  ],
+  "oneplus_5_group": [
+    "OnePlus 5",
+    "OnePlus 5T"
+  ],
+  "oneplus_6_group": [
+    "OnePlus 6",
+    "OnePlus 6T"
+  ],
+  "oneplus_7_group": [
+    "OnePlus 7",
+    "OnePlus 7 Pro"
+  ],
+  "oneplus_7t_group": [
+    "OnePlus 7T",
+    "OnePlus 7T Pro"
+  ],
+  "oneplus_8_group": [
+    "OnePlus 8",
+    "OnePlus 8 Pro"
+  ],
+  "oneplus_9_group": [
+    "OnePlus 9",
+    "OnePlus 9 Pro"
+  ],
+  "oneplus_10_group": [
+    "OnePlus 10",
+    "OnePlus 10 Pro"
+  ],
+  "oneplus_11_group": [
+    "OnePlus 11",
+    "OnePlus 11R",
+    "OnePlus 11 Pro"
+  ],
+  "oneplus_nord_group": [
+    "OnePlus Nord",
+    "OnePlus Nord CE",
+    "OnePlus Nord 2",
+    "OnePlus Nord 2T",
+    "OnePlus Nord CE 2"
+  ],
+  "google_pixel_1_group": [
+    "Google Pixel",
+    "Google Pixel XL"
+  ],
+  "google_pixel_2_group": [
+    "Google Pixel 2",
+    "Google Pixel 2 XL"
+  ],
+  "google_pixel_3_group": [
+    "Google Pixel 3",
+    "Google Pixel 3 XL",
+    "Google Pixel 3a",
+    "Google Pixel 3a XL"
+  ],
+  "motorola_g4_group": [
+    "Moto G4",
+    "Moto G4 Plus"
+  ],
+  "motorola_g5_group": [
+    "Moto G5",
+    "Moto G5 Plus"
+  ],
+  "motorola_g6_group": [
+    "Moto G6",
+    "Moto G6 Plus",
+    "Moto G6 Play"
+  ],
+  "motorola_g7_group": [
+    "Moto G7",
+    "Moto G7 Plus",
+    "Moto G7 Power",
+    "Moto G7 Play"
+  ],
+  "motorola_g8_group": [
+    "Moto G8",
+    "Moto G8 Plus",
+    "Moto G8 Power",
+    "Moto G8 Play"
+  ],
+  "motorola_g9_group": [
+    "Moto G9",
+    "Moto G9 Plus",
+    "Moto G9 Play",
+    "Moto G9 Power"
+  ],
+  "motorola_g60_group": [
+    "Moto G60",
+    "Moto G60S"
+  ],
+  "motorola_e4_group": [
+    "Moto E4",
+    "Moto E4 Plus"
+  ],
+  "motorola_e5_group": [
+    "Moto E5",
+    "Moto E5 Plus",
+    "Moto E5 Play"
+  ],
+  "motorola_e6_group": [
+    "Moto E6",
+    "Moto E6 Play"
+  ],
+  "motorola_e7_group": [
+    "Moto E7",
+    "Moto E7 Plus",
+    "Moto E7 Power"
+  ],
+  "motorola_one_group": [
+    "Moto One",
+    "Moto One Action",
+    "Moto One Vision",
+    "Moto One Zoom",
+    "Moto One Hyper"
+  ],
+  "motorola_razr_group": [
+    "Moto Razr 2019",
+    "Moto Razr 5G",
+    "Moto Razr 2022"
+  ],
+  "motorola_x_group": [
+    "Moto X 1st Gen",
+    "Moto X 2nd Gen",
+    "Moto X Style",
+    "Moto X Play",
+    "Moto X4"
+  ],
+  "motorola_z_group": [
+    "Moto Z",
+    "Moto Z Play",
+    "Moto Z2 Play",
+    "Moto Z2 Force",
+    "Moto Z3 Play"
+  ],
+  "nokia_1_group": [
+    "Nokia 1",
+    "Nokia 1 Plus"
+  ],
+  "nokia_2_group": [
+    "Nokia 2",
+    "Nokia 2.2",
+    "Nokia 2.3",
+    "Nokia 2.4"
+  ],
+  "nokia_3_group": [
+    "Nokia 3",
+    "Nokia 3.1",
+    "Nokia 3.2",
+    "Nokia 3.4"
+  ],
+  "nokia_5_group": [
+    "Nokia 5",
+    "Nokia 5.1",
+    "Nokia 5.3",
+    "Nokia 5.4"
+  ],
+  "nokia_6_group": [
+    "Nokia 6",
+    "Nokia 6.1",
+    "Nokia 6.2",
+    "Nokia 6.3"
+  ],
+  "nokia_7_group": [
+    "Nokia 7",
+    "Nokia 7.1",
+    "Nokia 7.2",
+    "Nokia 7 Plus"
+  ],
+  "nokia_8_group": [
+    "Nokia 8",
+    "Nokia 8 Sirocco",
+    "Nokia 8.1"
+  ],
+  "nokia_lumia_630_group": [
+    "Nokia Lumia 630",
+    "Nokia Lumia 635"
+  ],
+  "nokia_lumia_640_group": [
+    "Nokia Lumia 640",
+    "Nokia Lumia 640 XL"
+  ],
+  "nokia_105_group": [
+    "Nokia 105",
+    "Nokia 105 2019",
+    "Nokia 105 2021"
+  ],
+  "nokia_106_group": [
+    "Nokia 106",
+    "Nokia 106 2018"
+  ],
+  "nokia_110_group": [
+    "Nokia 110",
+    "Nokia 110 2019",
+    "Nokia 110 2022"
+  ],
+  "nokia_150_group": [
+    "Nokia 150",
+    "Nokia 150 2020"
+  ],
+  "nokia_225_group": [
+    "Nokia 225",
+    "Nokia 225 2019"
+  ],
+  "nokia_3310_group": [
+    "Nokia 3310 2017",
+    "Nokia 3310 2018",
+    "Nokia 3310 2019"
+  ],
+  "asus_zenfone_group": [
+    "Asus Zenfone 2",
+    "Asus Zenfone 2 Laser",
+    "Asus Zenfone 2 Deluxe",
+    "Asus Zenfone 2 Selfie",
+    "Asus Zenfone 3"
+  ],
+  "asus_rog_phone_group": [
+    "Asus ROG Phone",
+    "Asus ROG Phone II",
+    "Asus ROG Phone 2 Strix",
+    "Asus ROG Phone 3",
+    "Asus ROG Phone 3 Strix"
+  ],
+  "samsung_note_series_group": [
+    "Samsung Galaxy Note",
+    "Samsung Galaxy Note II",
+    "Samsung Galaxy Note 3",
+    "Samsung Galaxy Note 3 Neo",
+    "Samsung Galaxy Note 4"
+  ],
+  "samsung_m_series_group": [
+    "Samsung Galaxy M01",
+    "Samsung Galaxy M01s",
+    "Samsung Galaxy M02",
+    "Samsung Galaxy M02s",
+    "Samsung Galaxy M03"
+  ],
+  "samsung_f_series_group": [
+    "Samsung Galaxy F02s",
+    "Samsung Galaxy F04",
+    "Samsung Galaxy F12",
+    "Samsung Galaxy F13",
+    "Samsung Galaxy F14 5G"
+  ],
+  "samsung_z_series_group": [
+    "Samsung Galaxy Z Fold",
+    "Samsung Galaxy Z Fold 2",
+    "Samsung Galaxy Z Fold 3",
+    "Samsung Galaxy Z Fold 4",
+    "Samsung Galaxy Z Fold 5"
+  ],
+  "samsung_xcover_group": [
+    "Samsung Galaxy XCover 2",
+    "Samsung Galaxy XCover 3",
+    "Samsung Galaxy XCover 4",
+    "Samsung Galaxy XCover 4s",
+    "Samsung Galaxy XCover 5"
+  ],
+  "samsung_j_series_group": [
+    "Samsung Galaxy J1",
+    "Samsung Galaxy J2",
+    "Samsung Galaxy J3",
+    "Samsung Galaxy J4",
+    "Samsung Galaxy J5"
+  ],
+  "samsung_core_series_group": [
+    "Samsung Galaxy Core",
+    "Samsung Galaxy Core Plus",
+    "Samsung Galaxy Core Prime"
+  ],
+  "samsung_grand_series_group": [
+    "Samsung Galaxy Grand",
+    "Samsung Galaxy Grand Prime",
+    "Samsung Galaxy Grand Neo"
+  ],
+  "samsung_mega_series_group": [
+    "Samsung Galaxy Mega 5.8",
+    "Samsung Galaxy Mega 6.3"
+  ],
+  "samsung_pocket_series_group": [
+    "Samsung Galaxy Pocket",
+    "Samsung Galaxy Pocket 2"
+  ],
+  "galaxy_early_group": [
+    "Samsung Galaxy",
+    "Samsung Galaxy Spica",
+    "Samsung Galaxy Beam i8520",
+    "Samsung Galaxy U",
+    "Samsung Galaxy Neo"
+  ],
+  "samsung_fame_group": [
+    "Samsung Galaxy Fame",
+    "Samsung Galaxy Fame Lite"
+  ],
+  "samsung_star_group": [
+    "Samsung Galaxy Star",
+    "Samsung Galaxy Star Pro"
+  ],
+  "samsung_win_group": [
+    "Samsung Galaxy Win",
+    "Samsung Galaxy Win Pro"
+  ],
+  "samsung_express_group": [
+    "Samsung Galaxy Express",
+    "Samsung Galaxy Express 2"
+  ],
+  "xiaomi_mi_series_group": [
+    "Xiaomi Mi 1",
+    "Xiaomi Mi 2",
+    "Xiaomi Mi 3",
+    "Xiaomi Mi 4",
+    "Xiaomi Mi 5"
+  ],
+  "xiaomi_redmi_series_group": [
+    "Redmi 1A",
+    "Redmi 1S",
+    "Redmi 2",
+    "Redmi 2A",
+    "Redmi 3"
+  ],
+  "xiaomi_redmi_note_group": [
+    "Redmi Note 3",
+    "Redmi Note 3 Pro",
+    "Redmi Note 4",
+    "Redmi Note 5A",
+    "Redmi Note 5"
+  ],
+  "xiaomi_redmi_k_series_group": [
+    "Redmi K20",
+    "Redmi K20 Pro",
+    "Redmi K30",
+    "Redmi K30 5G",
+    "Redmi K30 Pro"
+  ],
+  "xiaomi_redmi_x_group": [
+    "Redmi X",
+    "Redmi X2",
+    "Redmi X3"
+  ],
+  "xiaomi_redmi_y_series_group": [
+    "Redmi Y1",
+    "Redmi Y1 Lite",
+    "Redmi Y2"
+  ],
+  "xiaomi_mi_max_group": [
+    "Xiaomi Mi Max",
+    "Xiaomi Mi Max 2",
+    "Xiaomi Mi Max 3"
+  ],
+  "xiaomi_mi_mix_group": [
+    "Xiaomi Mi MIX",
+    "Xiaomi Mi MIX 2",
+    "Xiaomi Mi MIX 2S",
+    "Xiaomi Mi MIX 3",
+    "Xiaomi Mi MIX Fold"
+  ],
+  "xiaomi_mi_cc_group": [
+    "Xiaomi Mi CC9",
+    "Xiaomi Mi CC9 Pro",
+    "Xiaomi CC9 Meitu Edition"
+  ],
+  "poco_f_series_group": [
+    "POCO F1",
+    "POCO F2 Pro",
+    "POCO F3",
+    "POCO F3 GT",
+    "POCO F4"
+  ],
+  "poco_x_series_group": [
+    "POCO X1",
+    "POCO X2",
+    "POCO X3",
+    "POCO X3 NFC",
+    "POCO X3 Pro"
+  ],
+  "poco_m_series_group": [
+    "POCO M1",
+    "POCO M2",
+    "POCO M2 Pro",
+    "POCO M3",
+    "POCO M3 Pro"
+  ],
+  "poco_c_series_group": [
+    "POCO C3",
+    "POCO C31",
+    "POCO C40"
+  ],
+  "xiaomi_mi2_group": [
+    "Xiaomi Mi 2",
+    "Xiaomi Mi 2S"
+  ],
+  "xiaomi_mi4_group": [
+    "Xiaomi Mi 4",
+    "Xiaomi Mi 4c",
+    "Xiaomi Mi 4i"
+  ],
+  "xiaomi_mi5_group": [
+    "Xiaomi Mi 5",
+    "Xiaomi Mi 5s",
+    "Xiaomi Mi 5s Plus"
+  ],
+  "xiaomi_mi6_group": [
+    "Xiaomi Mi 6",
+    "Xiaomi Mi 6X"
+  ],
+  "xiaomi_mi8_group": [
+    "Xiaomi Mi 8",
+    "Xiaomi Mi 8 SE",
+    "Xiaomi Mi 8 Lite"
+  ],
+  "xiaomi_mi9_group": [
+    "Xiaomi Mi 9",
+    "Xiaomi Mi 9T",
+    "Xiaomi Mi 9 SE"
+  ],
+  "xiaomi_mi10_group": [
+    "Xiaomi Mi 10",
+    "Xiaomi Mi 10 Pro",
+    "Xiaomi Mi 10 Lite"
+  ],
+  "xiaomi_13_group": [
+    "Xiaomi 13",
+    "Xiaomi 13 Pro",
+    "Xiaomi 13 Ultra"
+  ],
+  "xiaomi_14_group": [
+    "Xiaomi 14",
+    "Xiaomi 14 Pro",
+    "Xiaomi 14 Ultra"
+  ],
+  "xiaomi_15_group": [
+    "Xiaomi 15",
+    "Xiaomi 15 Pro",
+    "Xiaomi 15 Ultra",
+    "Xiaomi 15S Pro"
+  ],
+  "redmi_a_series_group": [
+    "Redmi A1",
+    "Redmi A1+",
+    "Redmi A2",
+    "Redmi A2+",
+    "Redmi A3"
+  ],
+  "redmi_note_group": [
+    "Redmi Note 3",
+    "Redmi Note 3 Pro",
+    "Redmi Note 4",
+    "Redmi Note 4X",
+    "Redmi Note 5"
+  ],
+  "redmi_y_series_group": [
+    "Redmi Y1",
+    "Redmi Y1 Lite",
+    "Redmi Y2",
+    "Redmi Y3"
+  ],
+  "poco_c_group": [
+    "POCO C3",
+    "POCO C40",
+    "POCO C50",
+    "POCO C51",
+    "POCO C55"
+  ],
+  "oppo_find_series_group": [
+    "OPPO Find X",
+    "OPPO Find X2",
+    "OPPO Find X2 Pro",
+    "OPPO Find X3",
+    "OPPO Find X3 Pro"
+  ],
+  "oppo_reno_series_group": [
+    "OPPO Reno",
+    "OPPO Reno 2",
+    "OPPO Reno 2 Z",
+    "OPPO Reno 2F",
+    "OPPO Reno 3"
+  ],
+  "oppo_a_series_group": [
+    "OPPO A1",
+    "OPPO A1k",
+    "OPPO A3",
+    "OPPO A3s",
+    "OPPO A5"
+  ],
+  "oppo_f_series_group": [
+    "OPPO F1",
+    "OPPO F1s",
+    "OPPO F3",
+    "OPPO F5",
+    "OPPO F7"
+  ],
+  "oppo_k_series_group": [
+    "OPPO K1",
+    "OPPO K3",
+    "OPPO K5",
+    "OPPO K7",
+    "OPPO K9"
+  ],
+  "oppo_c_series_group": [
+    "OPPO CPH1801",
+    "OPPO CPH1823",
+    "OPPO CPH1879",
+    "OPPO CPH1909",
+    "OPPO CPH1931"
+  ],
+  "oppo_neo_series_group": [
+    "OPPO Neo",
+    "OPPO Neo 3",
+    "OPPO Neo 5"
+  ],
+  "oppo_z_series_group": [
+    "OPPO Z",
+    "OPPO Z1",
+    "OPPO Z2"
+  ],
+  "oppo_reno_z_group": [
+    "OPPO Reno Z",
+    "OPPO Reno Z 5G"
+  ],
+  "oppo_others_group": [
+    "OPPO R11",
+    "OPPO R11s",
+    "OPPO R15",
+    "OPPO R15 Pro",
+    "OPPO R17"
+  ],
+  "apple_iphone_17_group": [
+    "iPhone 17"
+  ],
+  "apple_iphone_17mini_group": [
+    "iPhone 17 Mini"
+  ],
+  "apple_iphone_17pro_group": [
+    "iPhone 17 Pro"
+  ],
+  "apple_iphone_17promax_group": [
+    "iPhone 17 Pro Max"
+  ]
+}

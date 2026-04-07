@@ -1,0 +1,16 @@
+[Unit]
+Description=Glass Bot - Telegram Glass Finder
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/glass-bot
+ExecStart=/usr/bin/python3 /opt/glass-bot/main.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/opt/glass-bot/logs/bot.log
+StandardError=append:/opt/glass-bot/logs/errors.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Виртуальное окружение
+venv/
+env/
+ENV/
+
+# Переменные окружения
+.env
+*.env
+.env.*
+!*.example
+
+# Файлы с токенами
+данные.txt
+*.txt
+!requirements.txt
+!runtime.txt
+
+# База данных
+*.db
+*.sqlite3
+
+# Логи
+logs/
+*.log
+
+# Бэкапы
+backups/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
