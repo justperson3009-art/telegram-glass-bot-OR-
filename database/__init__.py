@@ -75,6 +75,19 @@ def init_db():
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Обратная связь (подошло/не подошло)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            query TEXT,
+            matched_model TEXT,
+            rating INTEGER,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+    """)
     
     conn.commit()
     conn.close()
@@ -321,3 +334,57 @@ def get_broadcast_stats():
 
 # Инициализация при импорте
 init_db()
+
+
+# === Обратная связь ===
+
+def add_feedback(user_id, query, matched_model, rating):
+    """Добавить отзыв: rating=1 (подошло), rating=0 (не подошло)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO feedback (user_id, query, matched_model, rating)
+        VALUES (?, ?, ?, ?)
+    """, (user_id, query, matched_model, rating))
+    conn.commit()
+    conn.close()
+
+
+def get_feedback_stats():
+    """Статистика обратной связи"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) as total FROM feedback WHERE rating = 1")
+    positive = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM feedback WHERE rating = 0")
+    negative = cursor.fetchone()["total"]
+
+    total = positive + negative
+    percent = round((positive / total * 100), 1) if total > 0 else 0
+
+    conn.close()
+    return {
+        "positive": positive,
+        "negative": negative,
+        "total": total,
+        "percent": percent
+    }
+
+
+def get_latest_feedback(limit=20):
+    """Последние отзывы"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT f.query, f.matched_model, f.rating, f.timestamp,
+               u.first_name, u.username
+        FROM feedback f
+        LEFT JOIN users u ON f.user_id = u.user_id
+        ORDER BY f.timestamp DESC
+        LIMIT ?
+    """, (limit,))
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results

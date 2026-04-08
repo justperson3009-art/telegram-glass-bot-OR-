@@ -7,7 +7,7 @@ from config import ADMIN_ID, get_text
 from database import (
     get_user_stats, get_all_users, block_user, unblock_user,
     add_broadcast, get_broadcast_stats, get_popular_searches,
-    get_setting, set_setting
+    get_setting, set_setting, get_feedback_stats, get_latest_feedback
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
 from utils.backup import backup_compatibility_json, backup_database, get_backup_list, cleanup_old_backups
@@ -28,9 +28,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("❌ У вас нет доступа к этой команде.")
         return
-    
+
     keyboard = [
         [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+        [InlineKeyboardButton("✅ Обратная связь", callback_data="admin_feedback")],
         [InlineKeyboardButton("➕ Добавить группу", callback_data="admin_add_group")],
         [InlineKeyboardButton("🗑 Удалить группу", callback_data="admin_delete_group")],
         [InlineKeyboardButton("📩 Рассылка", callback_data="admin_broadcast")],
@@ -40,7 +41,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⚙️ Настройки", callback_data="admin_settings")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text("🔧 **Админ-панель:**", reply_markup=reply_markup, parse_mode="Markdown")
 
 
@@ -53,6 +54,8 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "admin_stats":
         await show_stats(query)
+    elif data == "admin_feedback":
+        await show_feedback(query)
     elif data == "admin_add_group":
         await query.message.reply_text("📝 Введите название для новой группы (например: samsung_a55_group):")
         context.user_data["admin_state"] = WAITING_GROUP_NAME
@@ -84,7 +87,8 @@ async def show_stats(query):
     stats = get_user_stats()
     groups = get_all_groups()
     total_models = sum(len(models) for models in groups.values())
-    
+    feedback = get_feedback_stats()
+
     text = (
         f"📊 **Статистика бота:**\n\n"
         f"👥 Активных пользователей: **{stats['active']}**\n"
@@ -94,10 +98,39 @@ async def show_stats(query):
         f"🔍 Всего поисков: **{stats['total_searches']}**\n\n"
         f"📈 Активность:\n"
         f"  • Сегодня: **{stats['today_active']}**\n"
-        f"  • За неделю: **{stats['week_active']}**\n"
+        f"  • За неделю: **{stats['week_active']}**\n\n"
+        f"✅ **Обратная связь:**\n"
+        f"  • Подошло: **{feedback['positive']}**\n"
+        f"  • Не подошло: **{feedback['negative']}**\n"
+        f"  • Точность: **{feedback['percent']}%**\n"
     )
-    
+
     await query.message.reply_text(text, parse_mode="Markdown")
+
+
+async def show_feedback(query):
+    """Показывает отзывы пользователей"""
+    stats = get_feedback_stats()
+    latest = get_latest_feedback(limit=15)
+
+    text = (
+        f"✅ **Обратная связь:**\n\n"
+        f"📊 Всего отзывов: **{stats['total']}**\n"
+        f"✅ Подошло: **{stats['positive']}** ({stats['percent']}%)\n"
+        f"❌ Не подошло: **{stats['negative']}**\n\n"
+    )
+
+    if latest:
+        text += "**Последние отзывы:**\n\n"
+        for f in latest[:10]:
+            emoji = "✅" if f["rating"] == 1 else "❌"
+            name = f["first_name"] or f["username"] or "Аноним"
+            text += f"{emoji} {name}: `{f['query']}` → `{f['matched_model'][:25]}`\n"
+
+    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 
 async def show_users(query):
@@ -274,9 +307,10 @@ async def admin_back_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Кнопка назад в админке"""
     query = update.callback_query
     await query.answer()
-    
+
     keyboard = [
         [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
+        [InlineKeyboardButton("✅ Обратная связь", callback_data="admin_feedback")],
         [InlineKeyboardButton("➕ Добавить группу", callback_data="admin_add_group")],
         [InlineKeyboardButton("🗑 Удалить группу", callback_data="admin_delete_group")],
         [InlineKeyboardButton("📩 Рассылка", callback_data="admin_broadcast")],
@@ -286,7 +320,7 @@ async def admin_back_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
         [InlineKeyboardButton("⚙️ Настройки", callback_data="admin_settings")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await query.message.edit_text("🔧 **Админ-панель:**", reply_markup=reply_markup, parse_mode="Markdown")
 
 

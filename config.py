@@ -19,8 +19,8 @@ TEXTS = {
         "start": (
             "📱 **Привет! Я бот для подбора стёкол.**\n\n"
             "Напишите модель телефона (можно частично),\n"
-            "и я скажу все модели, для которых подходит стекло.\n\n"
-            "Или выберите бренд кнопками ниже 👇"
+            "и я скажу для каких моделей подходит стекло.\n\n"
+            "Примеры: `iPhone 15`, `Samsung A55`, `Redmi Note 13`"
         ),
         "feedback_prompt": (
             "✍️ Напишите ваше замечание или предложение.\n\n"
@@ -49,7 +49,7 @@ TEXTS = {
             "📱 **Hi! I'm a glass finder bot.**\n\n"
             "Type a phone model (partial is ok),\n"
             "and I'll show all compatible models.\n\n"
-            "Or choose a brand from buttons below 👇"
+            "Examples: `iPhone 15`, `Samsung A55`, `Redmi Note 13`"
         ),
         "feedback_prompt": "✍️ Write your feedback or suggestion.",
         "feedback_thanks": "✅ Thanks! Your message sent to admin.",
@@ -122,19 +122,3 @@ def get_partner_link(brand):
     return PARTNER_LINKS["default"]
 
 
-# === Бренды для кнопок ===
-# Формат: (текст_кнопки, ключ_поиска)
-BRANDS = [
-    ("🍎 Apple", "Apple"),
-    ("🔵 Samsung", "Samsung"),
-    ("🟠 Xiaomi", "Xiaomi"),
-    ("🔴 Tecno", "Tecno"),
-    ("🟣 Infinix", "Infinix"),
-    ("🔵 Realme", "Realme"),
-    ("🟢 OPPO", "OPPO"),
-    ("🟡 Vivo", "Vivo"),
-    ("⚫ Google", "Google"),
-    ("⚪ Motorola", "Motorola"),
-    ("🔵 Huawei", "Huawei"),
-    ("🔴 Honor", "Honor"),
-]

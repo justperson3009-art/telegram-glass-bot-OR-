@@ -9,9 +9,9 @@ from config import BOT_TOKEN, PROXY_URL
 from database import init_db, add_or_update_user, get_user
 from handlers.start import start_handler, feedback_handler, handle_feedback
 from handlers.search import (
-    search_handler, show_brands, brand_callback, 
-    select_model_callback, back_to_brands_callback,
-    history_callback, popular_callback, back_to_main_callback
+    search_handler,
+    history_callback, popular_callback, back_to_main_callback,
+    feedback_yes_callback, feedback_no_callback
 )
 from handlers.admin import get_admin_handlers
 from utils.logger import logger, log_error
@@ -41,15 +41,14 @@ def create_app():
     # Админ-панель
     for handler in get_admin_handlers():
         app.add_handler(handler)
-    
-    # Inline кнопки
-    app.add_handler(CallbackQueryHandler(brand_callback, pattern="^brand_"))
-    app.add_handler(CallbackQueryHandler(select_model_callback, pattern="^select_"))
-    app.add_handler(CallbackQueryHandler(back_to_brands_callback, pattern="^back_to_brands"))
+
+    # Inline callbacks
+    app.add_handler(CallbackQueryHandler(feedback_yes_callback, pattern="^feedback_yes_"))
+    app.add_handler(CallbackQueryHandler(feedback_no_callback, pattern="^feedback_no_"))
     app.add_handler(CallbackQueryHandler(history_callback, pattern="^my_history"))
     app.add_handler(CallbackQueryHandler(popular_callback, pattern="^popular_searches"))
     app.add_handler(CallbackQueryHandler(back_to_main_callback, pattern="^back_to_main"))
-    
+
     # Основной обработчик сообщений
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_main_message))
     
