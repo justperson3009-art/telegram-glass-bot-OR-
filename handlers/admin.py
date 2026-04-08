@@ -113,13 +113,50 @@ async def add_glass_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить стёкла"""
     context.user_data["admin_state"] = "add_glass"
     context.user_data["add_category"] = "glass"
+    await _send_add_models_message(update, "🔍 Добавить стёкла")
+
+async def add_chelts_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить чехлы"""
+    context.user_data["admin_state"] = "add_case"
+    context.user_data["add_category"] = "case"
+    await _send_add_models_message(update, "📱 Добавить чехлы")
+
+async def add_display_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить дисплеи"""
+    context.user_data["admin_state"] = "add_display"
+    context.user_data["add_category"] = "display"
+    await _send_add_models_message(update, "🖥️ Добавить дисплеи")
+
+async def add_battery_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить АКБ"""
+    context.user_data["admin_state"] = "add_battery"
+    context.user_data["add_category"] = "battery"
+    await _send_add_models_message(update, "🔋 Добавить АКБ")
+
+async def add_oca_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить переклейку"""
+    context.user_data["admin_state"] = "add_oca"
+    context.user_data["add_category"] = "oca"
+    await _send_add_models_message(update, "🧴 Добавить переклейку")
+
+
+async def _send_add_models_message(update: Update, title: str):
+    """Отправить сообщение с инструкцией по добавлению моделей"""
+    kb = [
+        [KeyboardButton(text="🔍 Добавить стёкла")],
+        [KeyboardButton(text="📱 Добавить чехлы")],
+        [KeyboardButton(text="🖥️ Добавить дисплеи")],
+        [KeyboardButton(text="🔋 Добавить АКБ")],
+        [KeyboardButton(text="🧴 Добавить переклейку")],
+        [KeyboardButton(text="⬅️ Назад")],
+    ]
     await update.message.reply_text(
-        "🔍 **Добавить стёкла**\n\n"
-        "Формат: `название_группы: модель1, модель2, модель3`\n\n"
-        "Пример: `samsung_a55_group: Samsung A55, Samsung A55 5G, Samsung A54`\n\n"
-        "Или просто список моделей (группа создастся автоматически):\n`iPhone 16, iPhone 16 Pro, iPhone 16 Pro Max`\n\n"
-        "⬅️ Назад — вернуться",
-        reply_markup=get_add_models_keyboard(),
+        f"{title}\n\n"
+        f"Формат: `название_группы: модель1, модель2`\n\n"
+        f"Пример: `samsung_a55_group: Samsung A55, Samsung A55 5G`\n\n"
+        f"Или просто: `iPhone 16, iPhone 16 Pro, iPhone 16 Pro Max`\n\n"
+        f"⬅️ Назад — вернуться",
+        reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True),
         parse_mode="Markdown"
     )
 

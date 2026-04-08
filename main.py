@@ -18,8 +18,7 @@ from handlers.search import (
 )
 from handlers import admin as admin_handler
 from keyboards import (
-    get_keyboard_by_role, get_admin_panel_keyboard, get_add_models_keyboard,
-    get_helpers_keyboard
+    get_keyboard_by_role, get_admin_panel_keyboard
 )
 from utils.logger import logger, log_error
 from utils.backup import backup_compatibility_json, backup_database
@@ -83,7 +82,14 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     # 2. Кнопка назад
     if user_input == "⬅️ Назад":
         state = context.user_data.get("admin_state")
-        if state and state.startswith("add_"):
+        if state == "add_models":
+            # Из меню добавления → в админ-панель
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        elif state and state.startswith("add_"):
+            # Из конкретного добавления → в меню добавления
+            context.user_data["admin_state"] = "add_models"
             await admin_handler.show_add_models(update, context)
         elif state and state.startswith("helper_"):
             await admin_handler.show_helpers(update, context)
@@ -169,37 +175,25 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     if user_input == "📱 Добавить чехлы":
         context.user_data["admin_state"] = "add_case"
         context.user_data["add_category"] = "case"
-        await update.message.reply_text(
-            "📱 **Добавить чехлы**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
-            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
-        )
+        await admin_handler.add_chelts_handler(update, context)
         return
 
     if user_input == "🖥️ Добавить дисплеи":
         context.user_data["admin_state"] = "add_display"
         context.user_data["add_category"] = "display"
-        await update.message.reply_text(
-            "🖥️ **Добавить дисплеи**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
-            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
-        )
+        await admin_handler.add_display_handler(update, context)
         return
 
     if user_input == "🔋 Добавить АКБ":
         context.user_data["admin_state"] = "add_battery"
         context.user_data["add_category"] = "battery"
-        await update.message.reply_text(
-            "🔋 **Добавить АКБ**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
-            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
-        )
+        await admin_handler.add_battery_handler(update, context)
         return
 
     if user_input == "🧴 Добавить переклейку":
         context.user_data["admin_state"] = "add_oca"
         context.user_data["add_category"] = "oca"
-        await update.message.reply_text(
-            "🧴 **Добавить переклейку**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
-            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
-        )
+        await admin_handler.add_oca_handler(update, context)
         return
 
     # === КНОПКА ПОМОЩНИКА ===
