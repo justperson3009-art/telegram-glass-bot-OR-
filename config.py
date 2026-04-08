@@ -123,17 +123,18 @@ def get_partner_link(brand):
 
 
 # === Бренды для кнопок ===
-BRANDS = {
-    "🍎 Apple": ["iPhone", "Apple"],
-    "🔵 Samsung": ["Samsung", "Galaxy"],
-    "🟠 Xiaomi": ["Xiaomi", "Redmi", "POCO", "Mi"],
-    "🔴 Tecno": ["Tecno"],
-    "🟣 Infinix": ["Infinix"],
-    "🔵 Realme": ["Realme"],
-    "🟢 OPPO": ["OPPO"],
-    "🟡 Vivo": ["Vivo"],
-    "⚫ Google": ["Google Pixel"],
-    "⚪ Motorola": ["Moto", "Motorola"],
-    "🔵 Huawei": ["Huawei"],
-    "🔴 Honor": ["Honor"],
-}
+# Формат: (текст_кнопки, ключ_поиска)
+BRANDS = [
+    ("🍎 Apple", "Apple"),
+    ("🔵 Samsung", "Samsung"),
+    ("🟠 Xiaomi", "Xiaomi"),
+    ("🔴 Tecno", "Tecno"),
+    ("🟣 Infinix", "Infinix"),
+    ("🔵 Realme", "Realme"),
+    ("🟢 OPPO", "OPPO"),
+    ("🟡 Vivo", "Vivo"),
+    ("⚫ Google", "Google"),
+    ("⚪ Motorola", "Motorola"),
+    ("🔵 Huawei", "Huawei"),
+    ("🔴 Honor", "Honor"),
+]

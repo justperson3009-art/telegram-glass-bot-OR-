@@ -66,11 +66,11 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_brands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показать кнопки брендов"""
     lang = context.user_data.get("lang", "ru")
-    
+
     keyboard = []
     row = []
-    for brand_text in BRANDS.keys():
-        row.append(InlineKeyboardButton(brand_text, callback_data=f"brand_{brand_text}"))
+    for brand_text, brand_key in BRANDS:
+        row.append(InlineKeyboardButton(brand_text, callback_data=f"brand_{brand_key}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []

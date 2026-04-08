@@ -32,15 +32,15 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     text = get_text(lang, "start")
-    
+
     # Кнопки брендов
     from config import BRANDS
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    
+
     keyboard = []
     row = []
-    for brand_text in list(BRANDS.keys())[:6]:  # Первые 6 брендов
-        row.append(InlineKeyboardButton(brand_text, callback_data=f"brand_{brand_text}"))
+    for brand_text, brand_key in BRANDS[:6]:  # Первые 6 брендов
+        row.append(InlineKeyboardButton(brand_text, callback_data=f"brand_{brand_key}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
