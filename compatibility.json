@@ -80,6 +80,30 @@
     "Samsung Galaxy A52",
     "Samsung Galaxy A53"
   ],
+  "samsung_a50_a51_group": [
+    "Samsung Galaxy A50",
+    "Samsung Galaxy A50s",
+    "Samsung Galaxy A51",
+    "Samsung Galaxy A51 5G"
+  ],
+  "samsung_a54_a55_group": [
+    "Samsung Galaxy A54",
+    "Samsung Galaxy A54 5G",
+    "Samsung Galaxy A55",
+    "Samsung Galaxy A55 5G"
+  ],
+  "samsung_a14_a15_group": [
+    "Samsung Galaxy A14",
+    "Samsung Galaxy A14 5G",
+    "Samsung Galaxy A15",
+    "Samsung Galaxy A15 5G"
+  ],
+  "samsung_a05_a06_group": [
+    "Samsung Galaxy A05",
+    "Samsung Galaxy A05s",
+    "Samsung Galaxy A06",
+    "Samsung Galaxy A06s"
+  ],
   "samsung_s21_group": [
     "Samsung Galaxy S21",
     "Samsung Galaxy S21 FE"

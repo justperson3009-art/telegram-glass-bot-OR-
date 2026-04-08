@@ -60,19 +60,42 @@ def find_compatible_models(user_input, compatibility_groups=None):
         compatibility_groups = load_compatibility_data()
     
     user_normalized = normalize_text(user_input)
-    
-    # === Шаг 1: Точное совпадение ===
-    for group in compatibility_groups.values():
-        for model in group:
-            if user_normalized in model.lower():
-                return {
-                    "found": True,
-                    "models": group,
-                    "exact_match": True,
-                    "matched_model": model,
-                    "confidence": 1.0
-                }
-    
+
+    # === Шаг 0: Перевод русских ключевых слов ===
+    user_words = user_normalized.split()
+    translated_words = [_translate_keyword(w) for w in user_words]
+    user_search = " ".join(translated_words)
+
+    # === Шаг 1: Точное совпадение (оригинал + перевод) ===
+    for search_text in [user_normalized, user_search]:
+        for group in compatibility_groups.values():
+            for model in group:
+                if search_text in model.lower():
+                    return {
+                        "found": True,
+                        "models": group,
+                        "exact_match": True,
+                        "matched_model": model,
+                        "confidence": 1.0
+                    }
+
+    # === Шаг 1.5: Проверка по ключевым СЛОВАМ (до нечёткого) ===
+    keywords = user_normalized.split()
+    if len(keywords) >= 2:
+        for group in compatibility_groups.values():
+            for model in group:
+                model_lower = model.lower()
+                matches = sum(1 for kw in keywords if kw in model_lower or _translate_keyword(kw) in model_lower)
+                if matches == len(keywords):
+                    return {
+                        "found": True,
+                        "models": group,
+                        "exact_match": True,
+                        "matched_model": model,
+                        "confidence": 0.95,
+                        "keyword_match": True
+                    }
+
     # === Шаг 2: Нечёткое совпадение (допускает 1-2 ошибки) ===
     best_match = None
     best_score = 0
@@ -104,26 +127,7 @@ def find_compatible_models(user_input, compatibility_groups=None):
     # Если нашли нечёткое совпадение
     if best_match:
         return best_match
-    
-    # === Шаг 3: Проверка по ключевым словам ===
-    # Например "айфон 15" → "iphone 15"
-    keywords = user_normalized.split()
-    
-    for group in compatibility_groups.values():
-        for model in group:
-            model_lower = model.lower()
-            matches = sum(1 for kw in keywords if kw in model_lower or _translate_keyword(kw) in model_lower)
-            
-            if matches == len(keywords):
-                return {
-                    "found": True,
-                    "models": group,
-                    "exact_match": False,
-                    "matched_model": model,
-                    "confidence": 0.8,
-                    "keyword_match": True
-                }
-    
+
     return {"found": False}
 
 
