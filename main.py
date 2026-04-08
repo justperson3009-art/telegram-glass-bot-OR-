@@ -82,7 +82,12 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     # 2. Кнопка назад
     if user_input == "⬅️ Назад":
         state = context.user_data.get("admin_state")
-        if state == "add_models":
+        if state == "admin_panel":
+            # Из админ-панели → в главное меню
+            context.user_data.pop("admin_state", None)
+            keyboard = get_keyboard_by_role(role)
+            await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
+        elif state == "add_models":
             # Из меню добавления → в админ-панель
             context.user_data["admin_state"] = "admin_panel"
             text = "👑 **Панель администратора**\n\nВыберите действие:"
@@ -94,7 +99,10 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         elif state and state.startswith("helper_"):
             await admin_handler.show_helpers(update, context)
         else:
-            await admin_handler.go_back_to_admin(update, context)
+            # По умолчанию → в главное меню
+            context.user_data.pop("admin_state", None)
+            keyboard = get_keyboard_by_role(role)
+            await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
         return
 
     # 3. Скрытый вход в админку
