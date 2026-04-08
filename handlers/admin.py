@@ -1,7 +1,7 @@
 """
 Админ-панель — полностью текстовое меню
 """
-from telegram import Update
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes
 from config import ADMIN_ID, get_text
 from database import (
@@ -14,8 +14,7 @@ from database import (
 from utils.search import get_all_groups, add_models_to_group, remove_group
 from utils.backup import backup_compatibility_json, backup_database, get_backup_list
 from keyboards import (
-    get_admin_panel_keyboard, get_add_models_keyboard,
-    get_helpers_keyboard, get_admin_keyboard, get_keyboard_by_role
+    get_admin_panel_keyboard, get_helpers_keyboard, get_keyboard_by_role
 )
 from utils.logger import log_broadcast, logger
 
@@ -94,7 +93,20 @@ async def show_add_models(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
 
-    await send("📦 **Добавить модели в базу:**\n\nВыберите категорию:", reply_markup=get_add_models_keyboard(), parse_mode="Markdown")
+    # Создаём клавиатуру с кнопкой "Назад"
+    kb = [
+        [KeyboardButton(text="🔍 Добавить стёкла")],
+        [KeyboardButton(text="📱 Добавить чехлы")],
+        [KeyboardButton(text="🖥️ Добавить дисплеи")],
+        [KeyboardButton(text="🔋 Добавить АКБ")],
+        [KeyboardButton(text="🧴 Добавить переклейку")],
+        [KeyboardButton(text="⬅️ Назад")],
+    ]
+    await send("📦 **Добавить модели в базу:**\n\nВыберите категорию:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
+
+
+from telegram import KeyboardButton
+from telegram import ReplyKeyboardMarkup
 
 
 async def add_glass_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -187,8 +199,11 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     # Обрабатываем Назад и В меню ПЕРВЫМ
     if user_input == "⬅️ Назад":
-        if state and state.startswith("add_"):
-            await show_add_models(update, context)
+        if state and (state.startswith("add_") or state == "add_models"):
+            # Из добавления моделей → в админ-панель
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
         elif state and state.startswith("helper_"):
             await show_helpers(update, context)
         else:
