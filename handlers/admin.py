@@ -137,13 +137,22 @@ async def list_helpers(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def assign_helper(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Назначить помощника"""
-    context.user_data["admin_state"] = WAITING_ADD_HELPER_ID
-    await update.message.reply_text("👤 Введите ID пользователя для назначения помощником:\n\n⬅️ Назад — отмена")
+    context.user_data["admin_state"] = "helper_add"
+    text = (
+        "➕ **Назначить помощника**\n\n"
+        "Введите ID пользователя или перешлите его сообщение.\n\n"
+        "Чтобы узнать ID пользователя:\n"
+        "1. Попросите его написать /start\n"
+        "2. Введите его числовой ID\n\n"
+        "Пример: `5164389862`\n\n"
+        "⬅️ Назад — отмена"
+    )
+    await update.message.reply_text(text, reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
 
 
 async def remove_helper(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Снять помощника"""
-    context.user_data["admin_state"] = WAITING_REMOVE_HELPER_ID
+    context.user_data["admin_state"] = "helper_remove"
     await update.message.reply_text("🚫 Введите ID пользователя для снятия с роли помощника:\n\n⬅️ Назад — отмена")
 
 
@@ -168,14 +177,6 @@ async def go_back_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["admin_state"] = "admin_panel"
     text = "👑 **Панель администратора**\n\nВыберите действие:"
     await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
-
-
-async def go_to_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Назад в главное меню"""
-    context.user_data["admin_state"] = None
-    role = get_user_role(update.effective_user.id)
-    keyboard = get_keyboard_by_role(role)
-    await update.message.reply_text("🏠 Возврат в главное меню", reply_markup=keyboard)
 
 
 async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,14 +204,14 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         _handle_add_model(update, context, "battery")
     elif state == WAITING_ADD_OCA:
         _handle_add_model(update, context, "oca")
-    elif state == WAITING_ADD_HELPER_ID:
+    elif state == "helper_add":
         try:
             helper_id = int(user_input)
             set_user_role(helper_id, "helper")
             await update.message.reply_text(f"✅ Пользователь `{helper_id}` назначен помощником!", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
         except ValueError:
             await update.message.reply_text("❌ Введите корректный ID (число).")
-    elif state == WAITING_REMOVE_HELPER_ID:
+    elif state == "helper_remove":
         try:
             helper_id = int(user_input)
             set_user_role(helper_id, "user")

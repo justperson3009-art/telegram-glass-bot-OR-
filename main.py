@@ -23,7 +23,6 @@ from keyboards import (
 )
 from utils.logger import logger, log_error
 from utils.backup import backup_compatibility_json, backup_database
-import asyncio
 
 
 def create_app():
@@ -37,7 +36,6 @@ def create_app():
     )
 
     app = ApplicationBuilder().token(BOT_TOKEN).request(request).build()
-
     init_db()
 
     # Команды
@@ -51,7 +49,7 @@ def create_app():
     app.add_handler(CallbackQueryHandler(popular_callback, pattern="^popular_searches"))
     app.add_handler(CallbackQueryHandler(back_to_main_callback, pattern="^back_to_main"))
 
-    # Основной обработчик сообщений
+    # Текстовые сообщения
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_main_message))
 
     # Обработка ошибок
@@ -64,7 +62,9 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Главный обработчик всех текстовых сообщений"""
     user_id = update.effective_user.id
     user_input = update.message.text.strip()
+    role = get_user_role(user_id)
 
+    # Сохраняем пользователя
     add_or_update_user(
         user_id=user_id,
         username=update.effective_user.username,
@@ -73,29 +73,54 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         language_code=update.effective_user.language_code
     )
 
-    role = get_user_role(user_id)
-
-    # === ПРОВЕРКА КНОПОК В ПЕРВУЮ ОЧЕРЕДЬ ===
-
-    # Кнопка возврата в меню
+    # 1. Кнопка возврата в меню
     if user_input == "🏠 В меню":
-        context.user_data["admin_state"] = None
+        context.user_data.pop("admin_state", None)
         keyboard = get_keyboard_by_role(role)
         await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
         return
 
-    # Кнопка назад
+    # 2. Кнопка назад
     if user_input == "⬅️ Назад":
         state = context.user_data.get("admin_state")
-        if state in ("add_models", "add_glass", "add_case", "add_display", "add_battery", "add_oca"):
+        if state and state.startswith("add_"):
             await admin_handler.show_add_models(update, context)
-        elif state in ("helpers_menu", "add_helper", "remove_helper"):
+        elif state and state.startswith("helper_"):
             await admin_handler.show_helpers(update, context)
         else:
             await admin_handler.go_back_to_admin(update, context)
         return
 
-    # Кнопки админ-панели
+    # 3. Скрытый вход в админку
+    if user_input == SECRET_ADMIN_WORD:
+        await secret_admin_handler(update, context)
+        return
+
+    # 4. Проверяем отзыв
+    if context.user_data.get("waiting_feedback"):
+        await handle_feedback(update, context)
+        return
+
+    # 5. Проверяем админ-состояние (ввод данных)
+    admin_state = context.user_data.get("admin_state")
+    if admin_state and admin_state not in ("admin_panel", "add_models", "helpers_menu"):
+        await admin_handler.handle_admin_input(update, context)
+        return
+
+    # 6. Проверяем заблокирован ли
+    db_user = get_user(user_id)
+    if db_user and db_user.get("is_blocked"):
+        await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
+        return
+
+    # === КНОПКИ АДМИНИСТРАТОРА ===
+    if user_input == "⚡ Управление":
+        if role == "admin":
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        return
+
     if user_input == "📊 Статистика бота":
         await admin_handler.show_admin_stats(update, context)
         return
@@ -105,10 +130,12 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     if user_input == "➕ Добавить модели":
+        context.user_data["admin_state"] = "add_models"
         await admin_handler.show_add_models(update, context)
         return
 
     if user_input == "👤 Помощники":
+        context.user_data["admin_state"] = "helpers_menu"
         await admin_handler.show_helpers(update, context)
         return
 
@@ -120,16 +147,17 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.show_block_unblock(update, context)
         return
 
-    # Кнопки помощников
     if user_input == "👥 Список помощников":
         await admin_handler.list_helpers(update, context)
         return
 
     if user_input == "➕ Назначить помощника":
+        context.user_data["admin_state"] = "helper_add"
         await admin_handler.assign_helper(update, context)
         return
 
     if user_input == "🚫 Снять помощника":
+        context.user_data["admin_state"] = "helper_remove"
         await admin_handler.remove_helper(update, context)
         return
 
@@ -174,52 +202,24 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         return
 
-    # Управление (админ)
-    if user_input == "⚡ Управление":
-        if role == "admin":
-            context.user_data["admin_state"] = "admin_panel"
-            text = "👑 **Панель администратора**\n\nВыберите действие:"
-            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
-        return
-
-    # Добавить в базу (помощник)
+    # === КНОПКА ПОМОЩНИКА ===
     if user_input == "➕ Добавить в базу":
         if role in ("admin", "helper"):
+            context.user_data["admin_state"] = "add_models"
             await admin_handler.show_add_models(update, context)
         return
 
-    # Скрытый вход в админку
-    if user_input == SECRET_ADMIN_WORD:
-        await secret_admin_handler(update, context)
-        return
-
-    # Проверяем не ждём ли мы отзыв
-    if context.user_data.get("waiting_feedback"):
-        await handle_feedback(update, context)
-        return
-
-    # Проверяем админ-состояние (ввод данных: группы, модели, ID)
-    if context.user_data.get("admin_state") is not None:
-        await admin_handler.handle_admin_input(update, context)
-        return
-
-    # Проверяем не заблокирован ли
-    db_user = get_user(user_id)
-    if db_user and db_user.get("is_blocked"):
-        await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
-        return
-
-    # Проверяем текстовые кнопки категорий
-    category_buttons = ["🔍 Подбор стёкол", "📱 Чехлы", "🖥️ Дисплеи", "🔋 АКБ", "🧴 Переклейка"]
-    if user_input in category_buttons:
+    # === КАТЕГОРИИ ===
+    if user_input in ("🔍 Подбор стёкол", "📱 Чехлы", "🖥️ Дисплеи", "🔋 АКБ", "🧴 Переклейка"):
         await category_button_handler(update, context)
         return
 
+    # === СТАТУС ===
     if user_input == "👤 Мой статус":
         await status_button_handler(update, context)
         return
 
-    # Обычный поиск
+    # === ОБЫЧНЫЙ ПОИСК ===
     try:
         await search_handler(update, context)
     except Exception as e:
@@ -228,7 +228,6 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка ошибок"""
     error = context.error
     log_error(error, {"update": str(update)})
     try:
@@ -242,7 +241,6 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
-    """Запуск бота"""
     try:
         backup_compatibility_json()
         backup_database()
