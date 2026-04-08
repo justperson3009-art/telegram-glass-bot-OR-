@@ -7,7 +7,7 @@ from telegram.request import HTTPXRequest
 
 from config import BOT_TOKEN, PROXY_URL, SECRET_ADMIN_WORD
 from database import init_db, add_or_update_user, get_user, get_user_category
-from handlers.start import start_handler, feedback_handler, handle_feedback, category_callback, secret_admin_handler
+from handlers.start import start_handler, feedback_handler, handle_feedback, category_callback, back_to_cats_callback, show_menu_callback, secret_admin_handler
 from handlers.search import (
     search_handler,
     history_callback, popular_callback, back_to_main_callback,
@@ -40,6 +40,8 @@ def create_app():
 
     # Категории (inline callback)
     app.add_handler(CallbackQueryHandler(category_callback, pattern="^cat_"))
+    app.add_handler(CallbackQueryHandler(back_to_cats_callback, pattern="^back_to_cats$"))
+    app.add_handler(CallbackQueryHandler(show_menu_callback, pattern="^show_menu$"))
 
     # Админ-панель (убираем /admin — только скрытый вход)
     for handler in get_admin_handlers():

@@ -84,7 +84,43 @@ async def category_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
     else:
         text = f"{cat_info['emoji']} **{cat_info['label']}**\n\n{cat_info['hint']}"
-        await query.message.edit_text(text, parse_mode="Markdown")
+        keyboard = [[InlineKeyboardButton("🔙 Назад к категориям", callback_data="back_to_cats")]]
+        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+
+async def back_to_cats_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Кнопка назад к категориям"""
+    query = update.callback_query
+    await query.answer()
+
+    lang = context.user_data.get("lang", "ru")
+    user_id = update.effective_user.id
+    context.user_data["category"] = "glass"
+    set_user_category(user_id, "glass")
+
+    keyboard = []
+    row = []
+    for key, cat in CATEGORIES.items():
+        label = f"{cat['emoji']} {cat['label']}"
+        if not cat["active"]:
+            label += " 🚧"
+        row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = get_text(lang, "start")
+    await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+
+async def show_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Кнопка показать главное меню"""
+    query = update.callback_query
+    await query.answer()
+    await start_handler(update, context)
 
 
 async def secret_admin_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

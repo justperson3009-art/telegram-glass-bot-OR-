@@ -60,11 +60,12 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Добавляем партнёрскую ссылку
         text += f"\n{get_partner_link(user_input)}"
 
-        # Кнопки обратной связи + категории
+        # Кнопки обратной связи + категории + меню
         current_cat = context.user_data.get("category", "glass")
         keyboard = [
             [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{user_input}"),
              InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{user_input}")],
+            [InlineKeyboardButton("📋 Главное меню", callback_data="show_menu")],
         ]
         keyboard.extend(_make_category_keyboard(current_cat))
 
@@ -84,6 +85,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         current_cat = context.user_data.get("category", "glass")
         keyboard = _make_category_keyboard(current_cat)
+        keyboard.append([InlineKeyboardButton("📋 Главное меню", callback_data="show_menu")])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
