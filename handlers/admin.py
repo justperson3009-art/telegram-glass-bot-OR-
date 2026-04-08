@@ -185,13 +185,22 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_input = update.message.text.strip()
     user_id = update.effective_user.id
 
-    if user_input == "⬅️ Назад" or user_input == "🏠 В меню":
-        if state in (WAITING_ADD_GLASS, WAITING_ADD_CASE, WAITING_ADD_DISPLAY, WAITING_ADD_BATTERY, WAITING_ADD_OCA):
+    # Обрабатываем Назад и В меню ПЕРВЫМ
+    if user_input == "⬅️ Назад":
+        if state and state.startswith("add_"):
             await show_add_models(update, context)
-        elif state in (WAITING_ADD_HELPER_ID, WAITING_REMOVE_HELPER_ID):
+        elif state and state.startswith("helper_"):
             await show_helpers(update, context)
         else:
             await go_back_to_admin(update, context)
+        return
+
+    if user_input == "🏠 В меню":
+        context.user_data.pop("admin_state", None)
+        from keyboards import get_keyboard_by_role
+        from database import get_user_role
+        role = get_user_role(user_id)
+        await update.message.reply_text("🏠 Главное меню", reply_markup=get_keyboard_by_role(role))
         return
 
     if state == "add_glass":
@@ -218,6 +227,26 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.message.reply_text(f"✅ Пользователь `{helper_id}` снят с роли помощника.", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
         except ValueError:
             await update.message.reply_text("❌ Введите корректный ID (число).")
+    elif state == WAITING_BROADCAST_TEXT:
+        users = get_all_users(active_only=True)
+        sent = failed = 0
+        progress = await update.message.reply_text(f"📩 Рассылка... 0/{len(users)}")
+        for u in users:
+            try:
+                await update.message._bot.send_message(chat_id=u["user_id"], text=user_input)
+                sent += 1
+            except:
+                failed += 1
+            if (sent + failed) % 10 == 0:
+                try:
+                    await progress.edit_text(f"📩 Рассылка... {sent + failed}/{len(users)}")
+                except:
+                    pass
+        add_broadcast(user_input, sent, failed)
+        log_broadcast(sent, failed)
+        await progress.edit_text(f"✅ Рассылка завершена!\n\nОтправлено: {sent}\nОшибок: {failed}", parse_mode="Markdown")
+        context.user_data["admin_state"] = "admin_panel"
+
     elif state == WAITING_BLOCK_USER_ID:
         parts = user_input.split()
         if len(parts) == 2:
