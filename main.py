@@ -74,45 +74,28 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     )
 
     role = get_user_role(user_id)
-    is_admin_user = (role == "admin")
-    is_helper_user = (role in ("admin", "helper"))
 
-    # Скрытый вход в админку
-    if user_input == SECRET_ADMIN_WORD:
-        await secret_admin_handler(update, context)
+    # === ПРОВЕРКА КНОПОК В ПЕРВУЮ ОЧЕРЕДЬ ===
+
+    # Кнопка возврата в меню
+    if user_input == "🏠 В меню":
+        context.user_data["admin_state"] = None
+        keyboard = get_keyboard_by_role(role)
+        await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
         return
 
-    # Проверяем не заблокирован ли
-    db_user = get_user(user_id)
-    if db_user and db_user.get("is_blocked"):
-        await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
-        return
-
-    # Проверяем не ждём ли мы отзыв
-    if context.user_data.get("waiting_feedback"):
-        await handle_feedback(update, context)
-        return
-
-    # Проверяем админ-состояние
-    if context.user_data.get("admin_state") is not None:
-        await admin_handler.handle_admin_input(update, context)
-        return
-
-    # === КНОПКИ ГЛАВНОГО МЕНЮ ===
-
-    if user_input == "⚡ Управление":
-        if is_admin_user:
-            context.user_data["admin_state"] = "admin_panel"
-            text = "👑 **Панель администратора**\n\nВыберите действие:"
-            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
-        return
-
-    if user_input == "➕ Добавить в базу":
-        if is_helper_user:
-            context.user_data["admin_state"] = "add_models"
+    # Кнопка назад
+    if user_input == "⬅️ Назад":
+        state = context.user_data.get("admin_state")
+        if state in ("add_models", "add_glass", "add_case", "add_display", "add_battery", "add_oca"):
             await admin_handler.show_add_models(update, context)
+        elif state in ("helpers_menu", "add_helper", "remove_helper"):
+            await admin_handler.show_helpers(update, context)
+        else:
+            await admin_handler.go_back_to_admin(update, context)
         return
 
+    # Кнопки админ-панели
     if user_input == "📊 Статистика бота":
         await admin_handler.show_admin_stats(update, context)
         return
@@ -137,22 +120,7 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.show_block_unblock(update, context)
         return
 
-    if user_input == "🏠 В меню":
-        context.user_data["admin_state"] = None
-        keyboard = get_keyboard_by_role(role)
-        await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
-        return
-
-    if user_input == "⬅️ Назад":
-        state = context.user_data.get("admin_state")
-        if state == "add_models":
-            await admin_handler.show_add_models(update, context)
-        elif state in ("helpers_menu", "add_helper", "remove_helper"):
-            await admin_handler.show_helpers(update, context)
-        else:
-            await admin_handler.go_back_to_admin(update, context)
-        return
-
+    # Кнопки помощников
     if user_input == "👥 Список помощников":
         await admin_handler.list_helpers(update, context)
         return
@@ -165,22 +133,80 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.remove_helper(update, context)
         return
 
-    # Категории добавления моделей (для админа/помощника)
+    # Кнопки добавления моделей
     if user_input == "🔍 Добавить стёкла":
         await admin_handler.add_glass_handler(update, context)
         return
 
-    if user_input in ("📱 Добавить чехлы", "🖥️ Добавить дисплеи", "🔋 Добавить АКБ", "🧴 Добавить переклейку"):
-        cat_map = {"📱 Добавить чехлы": "case", "🖥️ Добавить дисплеи": "display", "🔋 Добавить АКБ": "battery", "🧴 Добавить переклейку": "oca"}
-        context.user_data["admin_state"] = f"add_{cat_map[user_input]}"
-        context.user_data["add_category"] = cat_map[user_input]
+    if user_input == "📱 Добавить чехлы":
+        context.user_data["admin_state"] = "add_case"
+        context.user_data["add_category"] = "case"
         await update.message.reply_text(
-            f"📦 **Добавить модели**\n\n"
-            f"Формат: `название_группы: модель1, модель2`\n\n"
-            f"⬅️ Назад — вернуться",
-            reply_markup=get_add_models_keyboard(),
-            parse_mode="Markdown"
+            "📱 **Добавить чехлы**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
+            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
         )
+        return
+
+    if user_input == "🖥️ Добавить дисплеи":
+        context.user_data["admin_state"] = "add_display"
+        context.user_data["add_category"] = "display"
+        await update.message.reply_text(
+            "🖥️ **Добавить дисплеи**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
+            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
+        )
+        return
+
+    if user_input == "🔋 Добавить АКБ":
+        context.user_data["admin_state"] = "add_battery"
+        context.user_data["add_category"] = "battery"
+        await update.message.reply_text(
+            "🔋 **Добавить АКБ**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
+            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
+        )
+        return
+
+    if user_input == "🧴 Добавить переклейку":
+        context.user_data["admin_state"] = "add_oca"
+        context.user_data["add_category"] = "oca"
+        await update.message.reply_text(
+            "🧴 **Добавить переклейку**\n\nФормат: `группа: модель1, модель2`\n\n⬅️ Назад",
+            reply_markup=get_add_models_keyboard(), parse_mode="Markdown"
+        )
+        return
+
+    # Управление (админ)
+    if user_input == "⚡ Управление":
+        if role == "admin":
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        return
+
+    # Добавить в базу (помощник)
+    if user_input == "➕ Добавить в базу":
+        if role in ("admin", "helper"):
+            await admin_handler.show_add_models(update, context)
+        return
+
+    # Скрытый вход в админку
+    if user_input == SECRET_ADMIN_WORD:
+        await secret_admin_handler(update, context)
+        return
+
+    # Проверяем не ждём ли мы отзыв
+    if context.user_data.get("waiting_feedback"):
+        await handle_feedback(update, context)
+        return
+
+    # Проверяем админ-состояние (ввод данных: группы, модели, ID)
+    if context.user_data.get("admin_state") is not None:
+        await admin_handler.handle_admin_input(update, context)
+        return
+
+    # Проверяем не заблокирован ли
+    db_user = get_user(user_id)
+    if db_user and db_user.get("is_blocked"):
+        await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
         return
 
     # Проверяем текстовые кнопки категорий
