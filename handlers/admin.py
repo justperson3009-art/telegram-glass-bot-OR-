@@ -99,7 +99,7 @@ async def show_add_models(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def add_glass_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить стёкла"""
-    context.user_data["admin_state"] = WAITING_ADD_GLASS
+    context.user_data["admin_state"] = "add_glass"
     context.user_data["add_category"] = "glass"
     await update.message.reply_text(
         "🔍 **Добавить стёкла**\n\n"
@@ -194,15 +194,15 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await go_back_to_admin(update, context)
         return
 
-    if state == WAITING_ADD_GLASS:
+    if state == "add_glass":
         _handle_add_model(update, context, "glass")
-    elif state == WAITING_ADD_CASE:
+    elif state == "add_case":
         _handle_add_model(update, context, "case")
-    elif state == WAITING_ADD_DISPLAY:
+    elif state == "add_display":
         _handle_add_model(update, context, "display")
-    elif state == WAITING_ADD_BATTERY:
+    elif state == "add_battery":
         _handle_add_model(update, context, "battery")
-    elif state == WAITING_ADD_OCA:
+    elif state == "add_oca":
         _handle_add_model(update, context, "oca")
     elif state == "helper_add":
         try:
