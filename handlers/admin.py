@@ -12,6 +12,7 @@ from database import (
 from utils.search import get_all_groups, add_models_to_group, remove_group
 from utils.backup import backup_compatibility_json, backup_database, get_backup_list, cleanup_old_backups
 from utils.logger import log_broadcast, logger
+from keyboards import get_admin_keyboard
 import asyncio
 
 # Состояния FSM
@@ -24,25 +25,26 @@ def is_admin(user_id):
 
 
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Главное меню админ-панели"""
+    """Главное меню админ-панели — текстовое меню"""
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("❌ У вас нет доступа к этой команде.")
         return
 
-    keyboard = [
-        [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
-        [InlineKeyboardButton("✅ Обратная связь", callback_data="admin_feedback")],
-        [InlineKeyboardButton("➕ Добавить группу", callback_data="admin_add_group")],
-        [InlineKeyboardButton("🗑 Удалить группу", callback_data="admin_delete_group")],
-        [InlineKeyboardButton("📩 Рассылка", callback_data="admin_broadcast")],
-        [InlineKeyboardButton("👥 Пользователи", callback_data="admin_users")],
-        [InlineKeyboardButton("🔥 Популярное", callback_data="admin_popular")],
-        [InlineKeyboardButton("💾 Бэкапы", callback_data="admin_backups")],
-        [InlineKeyboardButton("⚙️ Настройки", callback_data="admin_settings")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = (
+        "🔧 **Админ-панель:**\n\n"
+        "Выберите действие кнопками ниже или напишите команду:\n\n"
+        "📊 Статистика\n"
+        "✅ Обратная связь\n"
+        "➕ Добавить группу\n"
+        "🗑 Удалить группу\n"
+        "📩 Рассылка\n"
+        "👥 Пользователи\n"
+        "🔥 Популярное\n"
+        "💾 Бэкапы\n"
+        "⚙️ Настройки"
+    )
 
-    await update.message.reply_text("🔧 **Админ-панель:**", reply_markup=reply_markup, parse_mode="Markdown")
+    await update.message.reply_text(text, reply_markup=get_admin_keyboard(), parse_mode="Markdown")
 
 
 async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -304,24 +306,12 @@ async def create_backup_callback(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def admin_back_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Кнопка назад в админке"""
+    """Кнопка назад в админке — возвращаем в главное меню админа"""
     query = update.callback_query
     await query.answer()
 
-    keyboard = [
-        [InlineKeyboardButton("📊 Статистика", callback_data="admin_stats")],
-        [InlineKeyboardButton("✅ Обратная связь", callback_data="admin_feedback")],
-        [InlineKeyboardButton("➕ Добавить группу", callback_data="admin_add_group")],
-        [InlineKeyboardButton("🗑 Удалить группу", callback_data="admin_delete_group")],
-        [InlineKeyboardButton("📩 Рассылка", callback_data="admin_broadcast")],
-        [InlineKeyboardButton("👥 Пользователи", callback_data="admin_users")],
-        [InlineKeyboardButton("🔥 Популярное", callback_data="admin_popular")],
-        [InlineKeyboardButton("💾 Бэкапы", callback_data="admin_backups")],
-        [InlineKeyboardButton("⚙️ Настройки", callback_data="admin_settings")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await query.message.edit_text("🔧 **Админ-панель:**", reply_markup=reply_markup, parse_mode="Markdown")
+    # Возвращаем текстовое меню админа
+    await query.message.reply_text("🔧 **Админ-панель:**", reply_markup=get_admin_keyboard(), parse_mode="Markdown")
 
 
 def get_admin_handlers():

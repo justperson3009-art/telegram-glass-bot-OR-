@@ -5,26 +5,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from utils.search import find_compatible_models, get_suggestions
 from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback
-from config import get_text, get_partner_link, CATEGORIES
-
-
-def _make_category_keyboard(current_category):
-    """Создать кнопки переключения категорий"""
-    keyboard = []
-    row = []
-    for key, cat in CATEGORIES.items():
-        label = f"{cat['emoji']} {cat['label']}"
-        if key == current_category:
-            label += " ✅"
-        elif not cat["active"]:
-            label += " 🚧"
-        row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
-    return keyboard
+from config import get_text, get_partner_link
+from keyboards import get_main_keyboard, get_admin_keyboard, get_keyboard_by_role
 
 
 async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -33,7 +15,6 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     lang = update.effective_user.language_code or "ru"
 
-    # Сохраняем язык пользователя
     context.user_data["lang"] = lang
 
     # Ищем
@@ -44,6 +25,10 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     increment_user_searches(user_id)
     if result["found"]:
         update_popular_search(user_input)
+
+    # Клавиатура возврата в меню
+    is_admin = (user_id == context.user_data.get("admin_id", 0)) or (user_id == int(__import__('config').ADMIN_ID))
+    menu_keyboard = get_keyboard_by_role(is_admin)
 
     if result["found"]:
         # Нашли!
@@ -60,15 +45,11 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Добавляем партнёрскую ссылку
         text += f"\n{get_partner_link(user_input)}"
 
-        # Кнопки обратной связи + категории + меню
-        current_cat = context.user_data.get("category", "glass")
+        # Кнопки обратной связи
         keyboard = [
             [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{user_input}"),
              InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{user_input}")],
-            [InlineKeyboardButton("📋 Главное меню", callback_data="show_menu")],
         ]
-        keyboard.extend(_make_category_keyboard(current_cat))
-
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -83,12 +64,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for s in suggestions[:3]:
                 text += f"• {s}\n"
 
-        current_cat = context.user_data.get("category", "glass")
-        keyboard = _make_category_keyboard(current_cat)
-        keyboard.append([InlineKeyboardButton("📋 Главное меню", callback_data="show_menu")])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        await update.message.reply_text(text, reply_markup=menu_keyboard, parse_mode="Markdown")
 
 
 async def feedback_yes_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

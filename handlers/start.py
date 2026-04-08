@@ -1,14 +1,15 @@
 """
-Обработчики /start и /feedback
+Обработчики /start, категории и /feedback
 """
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from database import add_or_update_user, get_user, set_user_category
 from config import get_text, ADMIN_ID, CATEGORIES, SECRET_ADMIN_WORD
+from keyboards import get_main_keyboard, get_admin_keyboard, get_keyboard_by_role
 
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик команды /start — показывает категории"""
+    """Обработчик команды /start — показывает текстовое меню"""
     user = update.effective_user
 
     add_or_update_user(
@@ -21,115 +22,88 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lang = user.language_code or "ru"
     context.user_data["lang"] = lang
+    context.user_data["category"] = "glass"
+    set_user_category(user.id, "glass")
 
-    db_user = get_user(user.id)
-    if db_user and db_user.get("is_blocked"):
-        await update.message.reply_text(get_text(lang, "no_access"))
-        return
-
-    # Кнопки категорий
-    keyboard = []
-    row = []
-    for key, cat in CATEGORIES.items():
-        label = f"{cat['emoji']} {cat['label']}"
-        if not cat["active"]:
-            label += " 🚧"
-        row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    is_admin = (user.id == ADMIN_ID)
+    keyboard = get_keyboard_by_role(is_admin)
     text = get_text(lang, "start")
 
-    await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
 
 
-async def category_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка выбора категории"""
-    query = update.callback_query
-    await query.answer()
-
-    category = query.data.replace("cat_", "")
-    lang = context.user_data.get("lang", "ru")
+async def category_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка нажатия текстовой кнопки категории"""
+    user_input = update.message.text.strip()
     user_id = update.effective_user.id
+
+    # Определяем категорию по тексту кнопки
+    category_map = {
+        "🔍 Подбор стёкол": "glass",
+        "📱 Чехлы": "case",
+        "🖥️ Дисплеи": "display",
+        "🔋 АКБ": "battery",
+        "🧴 Переклейка": "oca",
+    }
+
+    category = category_map.get(user_input)
+    if not category:
+        return
+
+    context.user_data["category"] = category
+    set_user_category(user_id, category)
 
     cat_info = CATEGORIES.get(category)
     if not cat_info:
         return
 
-    # Сохраняем категорию
-    set_user_category(user_id, category)
-    context.user_data["category"] = category
+    is_admin = (user_id == ADMIN_ID)
+    keyboard = get_keyboard_by_role(is_admin)
 
     if cat_info["active"]:
         text = f"{cat_info['emoji']} **{cat_info['label']}**\n\n{cat_info['hint']}"
-        # Показываем текущую выбранную категорию
-        current_row = []
-        for key, cat in CATEGORIES.items():
-            label = f"{cat['emoji']} {cat['label']}"
-            if key == category:
-                label += " ✅"
-            elif not cat["active"]:
-                label += " 🚧"
-            current_row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
-            if len(current_row) == 2:
-                keyboard = [current_row]
-                current_row = []
-        if current_row:
-            keyboard.append(current_row)
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
     else:
         text = f"{cat_info['emoji']} **{cat_info['label']}**\n\n{cat_info['hint']}"
-        keyboard = [[InlineKeyboardButton("🔙 Назад к категориям", callback_data="back_to_cats")]]
-        await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
 
 
-async def back_to_cats_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Кнопка назад к категориям"""
-    query = update.callback_query
-    await query.answer()
-
-    lang = context.user_data.get("lang", "ru")
+async def status_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка кнопки 👤 Мой статус"""
     user_id = update.effective_user.id
-    context.user_data["category"] = "glass"
-    set_user_category(user_id, "glass")
+    lang = context.user_data.get("lang", "ru")
 
-    keyboard = []
-    row = []
-    for key, cat in CATEGORIES.items():
-        label = f"{cat['emoji']} {cat['label']}"
-        if not cat["active"]:
-            label += " 🚧"
-        row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
-        if len(row) == 2:
-            keyboard.append(row)
-            row = []
-    if row:
-        keyboard.append(row)
+    from database import get_user
+    db_user = get_user(user_id)
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    text = get_text(lang, "start")
-    await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+    if not db_user:
+        text = "⚠️ Вы ещё не зарегистрированы в системе."
+    else:
+        total = db_user.get("total_searches", 0)
+        category = db_user.get("active_category", "glass")
+        cat_info = CATEGORIES.get(category, {})
+        cat_label = cat_info.get("label", category)
 
+        text = (
+            f"👤 **Ваш статус:**\n\n"
+            f"📊 Всего поисков: **{total}**\n"
+            f"📂 Активная категория: **{cat_label}**\n"
+            f"🆔 ID: `{user_id}`\n\n"
+            f"🔜 Скоро будет доступна подписка!"
+        )
 
-async def show_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Кнопка показать главное меню"""
-    query = update.callback_query
-    await query.answer()
-    await start_handler(update, context)
+    is_admin = (user_id == ADMIN_ID)
+    keyboard = get_keyboard_by_role(is_admin)
+
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
 
 
 async def secret_admin_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Скрытый вход в админку по секретному слову"""
     user_id = update.effective_user.id
     if user_id != ADMIN_ID:
-        return  # Игнорируем для обычных пользователей
+        return
 
-    # Переходим в режим админки
     context.user_data["admin_state"] = "panel"
 
     from handlers.admin import admin_panel
