@@ -4,4 +4,4 @@ from .search import (
     history_callback, popular_callback, back_to_main_callback,
     feedback_yes_callback, feedback_no_callback
 )
-from .admin import get_admin_handlers
+from . import admin

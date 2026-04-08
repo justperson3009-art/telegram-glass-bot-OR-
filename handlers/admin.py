@@ -1,324 +1,274 @@
 """
-Полная админ-панель с рассылкой, статистикой, управлением
+Админ-панель — полностью текстовое меню
 """
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ConversationHandler
+from telegram import Update
+from telegram.ext import ContextTypes
 from config import ADMIN_ID, get_text
 from database import (
     get_user_stats, get_all_users, block_user, unblock_user,
     add_broadcast, get_broadcast_stats, get_popular_searches,
-    get_setting, set_setting, get_feedback_stats, get_latest_feedback
+    get_setting, set_setting, get_feedback_stats, get_latest_feedback,
+    get_helpers, set_user_role, get_user_role, add_subscription,
+    get_subscription_stats, is_admin as db_is_admin
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
-from utils.backup import backup_compatibility_json, backup_database, get_backup_list, cleanup_old_backups
+from utils.backup import backup_compatibility_json, backup_database, get_backup_list
+from keyboards import (
+    get_admin_panel_keyboard, get_add_models_keyboard,
+    get_helpers_keyboard, get_admin_keyboard, get_keyboard_by_role
+)
 from utils.logger import log_broadcast, logger
-from keyboards import get_admin_keyboard
-import asyncio
 
-# Состояния FSM
-WAITING_GROUP_NAME, WAITING_MODELS_LIST, WAITING_GROUP_TO_DELETE, WAITING_BROADCAST, WAITING_BLOCK_USER = range(5)
+# FSM состояния админки
+WAITING_GROUP_NAME, WAITING_MODELS_LIST, WAITING_BLOCK_USER_ID, WAITING_BROADCAST_TEXT = range(4)
+WAITING_ADD_HELPER_ID, WAITING_REMOVE_HELPER_ID = range(4, 6)
+WAITING_ADD_GLASS, WAITING_ADD_CASE, WAITING_ADD_DISPLAY, WAITING_ADD_BATTERY, WAITING_ADD_OCA = range(6, 11)
 
 
 def is_admin(user_id):
-    """Проверяет что пользователь — админ"""
     return user_id == ADMIN_ID
 
 
-async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Главное меню админ-панели — текстовое меню"""
-    if not is_admin(update.effective_user.id):
-        await update.message.reply_text("❌ У вас нет доступа к этой команде.")
+async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Статистика бота"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
         return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
 
-    text = (
-        "🔧 **Админ-панель:**\n\n"
-        "Выберите действие кнопками ниже или напишите команду:\n\n"
-        "📊 Статистика\n"
-        "✅ Обратная связь\n"
-        "➕ Добавить группу\n"
-        "🗑 Удалить группу\n"
-        "📩 Рассылка\n"
-        "👥 Пользователи\n"
-        "🔥 Популярное\n"
-        "💾 Бэкапы\n"
-        "⚙️ Настройки"
-    )
-
-    await update.message.reply_text(text, reply_markup=get_admin_keyboard(), parse_mode="Markdown")
-
-
-async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка кнопок админ-панели"""
-    query = update.callback_query
-    await query.answer()
-    
-    data = query.data
-    
-    if data == "admin_stats":
-        await show_stats(query)
-    elif data == "admin_feedback":
-        await show_feedback(query)
-    elif data == "admin_add_group":
-        await query.message.reply_text("📝 Введите название для новой группы (например: samsung_a55_group):")
-        context.user_data["admin_state"] = WAITING_GROUP_NAME
-    elif data == "admin_delete_group":
-        groups = get_all_groups()
-        text = "🗑 Доступные группы для удаления:\n\n"
-        for i, group_name in enumerate(list(groups.keys())[:20], 1):
-            text += f"{i}. `{group_name}`\n"
-        if len(groups) > 20:
-            text += f"... и ещё {len(groups) - 20}\n"
-        text += "\nВведите название группы для удаления:"
-        await query.message.reply_text(text, parse_mode="Markdown")
-        context.user_data["admin_state"] = WAITING_GROUP_TO_DELETE
-    elif data == "admin_broadcast":
-        await query.message.reply_text("📩 Введите текст для рассылки всем пользователям бота:")
-        context.user_data["admin_state"] = WAITING_BROADCAST
-    elif data == "admin_users":
-        await show_users(query)
-    elif data == "admin_popular":
-        await show_popular(query)
-    elif data == "admin_backups":
-        await show_backups(query)
-    elif data == "admin_settings":
-        await show_settings(query)
-
-
-async def show_stats(query):
-    """Показывает статистику бота"""
     stats = get_user_stats()
-    groups = get_all_groups()
-    total_models = sum(len(models) for models in groups.values())
     feedback = get_feedback_stats()
+    subs = get_subscription_stats()
+    groups = get_all_groups()
 
     text = (
         f"📊 **Статистика бота:**\n\n"
-        f"👥 Активных пользователей: **{stats['active']}**\n"
+        f"👥 Активных: **{stats['active']}**\n"
         f"🚫 Заблокированных: **{stats['blocked']}**\n"
-        f"📱 Всего моделей в базе: **{total_models}**\n"
-        f"📦 Групп совместимости: **{len(groups)}**\n"
-        f"🔍 Всего поисков: **{stats['total_searches']}**\n\n"
+        f"🔍 Всего поисков: **{stats['total_searches']}**\n"
+        f"📱 Моделей в базе: **{sum(len(m) for m in groups.values())}**\n"
+        f"📦 Групп: **{len(groups)}**\n\n"
         f"📈 Активность:\n"
         f"  • Сегодня: **{stats['today_active']}**\n"
-        f"  • За неделю: **{stats['week_active']}**\n\n"
-        f"✅ **Обратная связь:**\n"
+        f"  • Неделя: **{stats['week_active']}**\n\n"
+        f"✅ Обратная связь:\n"
         f"  • Подошло: **{feedback['positive']}**\n"
         f"  • Не подошло: **{feedback['negative']}**\n"
-        f"  • Точность: **{feedback['percent']}%**\n"
+        f"  • Точность: **{feedback['percent']}%**\n\n"
+        f"💳 Подписки:\n"
+        f"  • Активных: **{subs['active_subscriptions']}**\n"
+        f"  • Бесплатных: **{subs['free_users']}**\n"
     )
 
-    await query.message.reply_text(text, parse_mode="Markdown")
+    await send(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
 
 
-async def show_feedback(query):
-    """Показывает отзывы пользователей"""
-    stats = get_feedback_stats()
-    latest = get_latest_feedback(limit=15)
+async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Статистика подписок"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
+        return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
 
+    subs = get_subscription_stats()
     text = (
-        f"✅ **Обратная связь:**\n\n"
-        f"📊 Всего отзывов: **{stats['total']}**\n"
-        f"✅ Подошло: **{stats['positive']}** ({stats['percent']}%)\n"
-        f"❌ Не подошло: **{stats['negative']}**\n\n"
+        f"💳 **Подписки:**\n\n"
+        f"👥 Всего пользователей: **{subs['total_users']}**\n"
+        f"✅ Активных подписок: **{subs['active_subscriptions']}**\n"
+        f"🆓 Бесплатных: **{subs['free_users']}**\n\n"
+    )
+    if subs['plans']:
+        text += "**По планам:**\n"
+        for plan, cnt in subs['plans'].items():
+            text += f"  • {plan}: **{cnt}**\n"
+    else:
+        text += "📭 Подписок пока нет."
+
+    await send(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+
+
+async def show_add_models(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Меню добавления моделей"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
+        return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
+
+    await send("📦 **Добавить модели в базу:**\n\nВыберите категорию:", reply_markup=get_add_models_keyboard(), parse_mode="Markdown")
+
+
+async def add_glass_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить стёкла"""
+    context.user_data["admin_state"] = WAITING_ADD_GLASS
+    context.user_data["add_category"] = "glass"
+    await update.message.reply_text(
+        "🔍 **Добавить стёкла**\n\n"
+        "Формат: `название_группы: модель1, модель2, модель3`\n\n"
+        "Пример: `samsung_a55_group: Samsung A55, Samsung A55 5G, Samsung A54`\n\n"
+        "Или просто список моделей (группа создастся автоматически):\n`iPhone 16, iPhone 16 Pro, iPhone 16 Pro Max`\n\n"
+        "⬅️ Назад — вернуться",
+        reply_markup=get_add_models_keyboard(),
+        parse_mode="Markdown"
     )
 
-    if latest:
-        text += "**Последние отзывы:**\n\n"
-        for f in latest[:10]:
-            emoji = "✅" if f["rating"] == 1 else "❌"
-            name = f["first_name"] or f["username"] or "Аноним"
-            text += f"{emoji} {name}: `{f['query']}` → `{f['matched_model'][:25]}`\n"
 
-    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+async def show_helpers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Меню помощников"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
+        return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
+    await send("👤 **Управление помощниками:**", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
 
 
-async def show_users(query):
-    """Показывает список пользователей"""
-    users = get_all_users(active_only=True)
-    
-    if not users:
-        text = "👥 Пользователей пока нет."
+async def list_helpers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Список помощников"""
+    helpers = get_helpers()
+    if not helpers:
+        text = "👥 Помощников пока нет."
     else:
-        text = f"👥 **Пользователи ({len(users)}):**\n\n"
-        for u in users[:10]:
-            name = u["first_name"] or u["username"] or "Аноним"
-            text += f"• {name} (ID: `{u['user_id']}`) — {u['total_searches']} поисков\n"
-        
-        if len(users) > 10:
-            text += f"\n... и ещё {len(users) - 10}"
-    
-    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+        text = "👥 **Помощники:**\n\n"
+        for h in helpers:
+            name = h.get("first_name") or h.get("username") or f"ID:{h['user_id']}"
+            text += f"• {name} (ID: `{h['user_id']}`)\n"
+
+    await update.message.reply_text(text, reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
 
 
-async def show_popular(query):
-    """Показывает популярные запросы"""
-    popular = get_popular_searches(limit=15, days=7)
-    
-    if not popular:
-        text = "🔥 Пока нет популярных запросов."
-    else:
-        text = "🔥 **Популярные запросы за неделю:**\n\n"
-        for i, p in enumerate(popular, 1):
-            text += f"{i}. `{p['query']}` — {p['count']} раз\n"
-    
-    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+async def assign_helper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Назначить помощника"""
+    context.user_data["admin_state"] = WAITING_ADD_HELPER_ID
+    await update.message.reply_text("👤 Введите ID пользователя для назначения помощником:\n\n⬅️ Назад — отмена")
 
 
-async def show_backups(query):
-    """Показывает бэкапы"""
-    backups = get_backup_list()
-    
-    if not backups:
-        text = "💾 Бэкапов пока нет."
-    else:
-        text = "💾 **Бэкапы:**\n\n"
-        for b in backups[-10:]:
-            text += f"• `{b['name']}` ({b['size']}) — {b['date']}\n"
-    
-    # Кнопки
-    keyboard = [
-        [InlineKeyboardButton("💾 Создать бэкап", callback_data="admin_create_backup")],
-        [InlineKeyboardButton("🔙 Назад", callback_data="admin_back")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+async def remove_helper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Снять помощника"""
+    context.user_data["admin_state"] = WAITING_REMOVE_HELPER_ID
+    await update.message.reply_text("🚫 Введите ID пользователя для снятия с роли помощника:\n\n⬅️ Назад — отмена")
 
 
-async def show_settings(query):
-    """Показывает настройки"""
-    partner_link = get_setting("partner_link", "не установлена")
-    
-    text = (
-        f"⚙️ **Настройки бота:**\n\n"
-        f"🔗 Партнёрская ссылка: `{partner_link}`\n\n"
-        f"Чтобы изменить ссылку, отправьте:\n"
-        f"`/set_partner https://example.com`"
+async def show_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Рассылка"""
+    context.user_data["admin_state"] = WAITING_BROADCAST_TEXT
+    await update.message.reply_text("📩 Введите текст рассылки:\n\n⬅️ Назад — отмена")
+
+
+async def show_block_unblock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Блокировка/разблокировка"""
+    context.user_data["admin_state"] = WAITING_BLOCK_USER_ID
+    await update.message.reply_text(
+        "🚫 **Блокировка/Разблокировка**\n\n"
+        "Формат: `block 123456789` или `unblock 123456789`\n\n"
+        "⬅️ Назад — отмена"
     )
-    
-    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_back")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+
+
+async def go_back_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Назад в админ-панель"""
+    context.user_data["admin_state"] = "admin_panel"
+    text = "👑 **Панель администратора**\n\nВыберите действие:"
+    await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+
+
+async def go_to_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Назад в главное меню"""
+    context.user_data["admin_state"] = None
+    role = get_user_role(update.effective_user.id)
+    keyboard = get_keyboard_by_role(role)
+    await update.message.reply_text("🏠 Возврат в главное меню", reply_markup=keyboard)
 
 
 async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ввода в админ-панели"""
     state = context.user_data.get("admin_state")
     user_input = update.message.text.strip()
-    
-    if state == WAITING_GROUP_NAME:
-        context.user_data["new_group_name"] = user_input
-        context.user_data["admin_state"] = WAITING_MODELS_LIST
-        await update.message.reply_text(
-            f"✅ Группа: {user_input}\n\n"
-            f"Теперь введите модели через запятую:\n"
-            f"например: Samsung A55, Samsung A55 5G, Samsung A55 Pro"
-        )
-    
-    elif state == WAITING_MODELS_LIST:
-        group_name = context.user_data.get("new_group_name")
-        models = [m.strip() for m in user_input.split(",")]
-        
-        add_models_to_group(group_name, models)
-        
-        await update.message.reply_text(
-            f"✅ Группа **{group_name}** добавлена!\n"
-            f"Моделей: {len(models)}\n\n"
-            f"Используйте /admin чтобы вернуться в меню.",
-            parse_mode="Markdown"
-        )
-        context.user_data["admin_state"] = None
-    
-    elif state == WAITING_GROUP_TO_DELETE:
-        if remove_group(user_input):
-            await update.message.reply_text(f"✅ Группа **{user_input}** удалена.", parse_mode="Markdown")
+    user_id = update.effective_user.id
+
+    if user_input == "⬅️ Назад" or user_input == "🏠 В меню":
+        if state in (WAITING_ADD_GLASS, WAITING_ADD_CASE, WAITING_ADD_DISPLAY, WAITING_ADD_BATTERY, WAITING_ADD_OCA):
+            await show_add_models(update, context)
+        elif state in (WAITING_ADD_HELPER_ID, WAITING_REMOVE_HELPER_ID):
+            await show_helpers(update, context)
         else:
-            await update.message.reply_text(f"❌ Группа {user_input} не найдена.")
-        context.user_data["admin_state"] = None
-    
-    elif state == WAITING_BROADCAST:
-        # Рассылка
+            await go_back_to_admin(update, context)
+        return
+
+    if state == WAITING_ADD_GLASS:
+        _handle_add_model(update, context, "glass")
+    elif state == WAITING_ADD_CASE:
+        _handle_add_model(update, context, "case")
+    elif state == WAITING_ADD_DISPLAY:
+        _handle_add_model(update, context, "display")
+    elif state == WAITING_ADD_BATTERY:
+        _handle_add_model(update, context, "battery")
+    elif state == WAITING_ADD_OCA:
+        _handle_add_model(update, context, "oca")
+    elif state == WAITING_ADD_HELPER_ID:
+        try:
+            helper_id = int(user_input)
+            set_user_role(helper_id, "helper")
+            await update.message.reply_text(f"✅ Пользователь `{helper_id}` назначен помощником!", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
+        except ValueError:
+            await update.message.reply_text("❌ Введите корректный ID (число).")
+    elif state == WAITING_REMOVE_HELPER_ID:
+        try:
+            helper_id = int(user_input)
+            set_user_role(helper_id, "user")
+            await update.message.reply_text(f"✅ Пользователь `{helper_id}` снят с роли помощника.", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
+        except ValueError:
+            await update.message.reply_text("❌ Введите корректный ID (число).")
+    elif state == WAITING_BLOCK_USER_ID:
+        parts = user_input.split()
+        if len(parts) == 2:
+            action, target_id = parts[0], int(parts[1])
+            if action == "block":
+                block_user(target_id)
+                await update.message.reply_text(f"✅ Пользователь `{target_id}` заблокирован.", reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+            elif action == "unblock":
+                unblock_user(target_id)
+                await update.message.reply_text(f"✅ Пользователь `{target_id}` разблокирован.", reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        else:
+            await update.message.reply_text("❌ Формат: `block ID` или `unblock ID`")
+    elif state == WAITING_BROADCAST_TEXT:
         users = get_all_users(active_only=True)
-        sent = 0
-        failed = 0
-        
-        progress_msg = await update.message.reply_text(f"📩 Рассылка... 0/{len(users)}")
-        
-        for user in users:
+        sent = failed = 0
+        progress = await update.message.reply_text(f"📩 Рассылка... 0/{len(users)}")
+        for u in users:
             try:
-                await update.message._bot.send_message(
-                    chat_id=user["user_id"],
-                    text=user_input
-                )
+                await update.message._bot.send_message(chat_id=u["user_id"], text=user_input)
                 sent += 1
-            except Exception as e:
+            except:
                 failed += 1
-                logger.error(f"Broadcast failed for user {user['user_id']}: {e}")
-            
-            # Обновляем прогресс каждые 10
             if (sent + failed) % 10 == 0:
-                await progress_msg.edit_text(f"📩 Рассылка... {sent + failed}/{len(users)}")
-        
-        # Записываем в БД
+                try:
+                    await progress.edit_text(f"📩 Рассылка... {sent + failed}/{len(users)}")
+                except:
+                    pass
         add_broadcast(user_input, sent, failed)
         log_broadcast(sent, failed)
-        
-        await progress_msg.edit_text(
-            f"✅ Рассылка завершена!\n\n"
-            f"Отправлено: {sent}\n"
-            f"Ошибок: {failed}",
-            parse_mode="Markdown"
-        )
-        context.user_data["admin_state"] = None
+        await progress.edit_text(f"✅ Рассылка завершена!\n\nОтправлено: {sent}\nОшибок: {failed}", parse_mode="Markdown")
+        context.user_data["admin_state"] = "admin_panel"
 
 
-async def create_backup_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Создание бэкапа"""
-    query = update.callback_query
-    await query.answer()
-    
-    compat_backup = backup_compatibility_json()
-    db_backup = backup_database()
-    
-    text = "✅ Бэкапы созданы:\n\n"
-    if compat_backup:
-        text += f"📦 Compatibility: `{os.path.basename(compat_backup)}`\n"
-    if db_backup:
-        text += f"🗄 База данных: `{os.path.basename(db_backup)}`\n"
-    
-    # Чистим старые
-    cleanup_old_backups(keep_days=7)
-    
-    keyboard = [[InlineKeyboardButton("🔙 Назад", callback_data="admin_backups")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
+def _handle_add_model(update, context, category):
+    """Обработка добавления моделей"""
+    user_input = update.message.text.strip()
+    if ":" in user_input:
+        group_name, models_str = user_input.split(":", 1)
+        models = [m.strip() for m in models_str.split(",")]
+    else:
+        models = [m.strip() for m in user_input.split(",")]
+        group_name = f"{category}_{len(get_all_groups()) + 1}_group"
 
-
-async def admin_back_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Кнопка назад в админке — возвращаем в главное меню админа"""
-    query = update.callback_query
-    await query.answer()
-
-    # Возвращаем текстовое меню админа
-    await query.message.reply_text("🔧 **Админ-панель:**", reply_markup=get_admin_keyboard(), parse_mode="Markdown")
+    add_models_to_group(group_name, models)
+    update.message.reply_text(
+        f"✅ Добавлено **{len(models)}** моделей в группу `{group_name}`",
+        reply_markup=get_add_models_keyboard(),
+        parse_mode="Markdown"
+    )
+    context.user_data["admin_state"] = None
 
 
 def get_admin_handlers():
-    """Возвращает обработчики админ-панели (без MessageHandler!)"""
-    return [
-        CommandHandler("admin", admin_panel),
-        CallbackQueryHandler(admin_callback, pattern="^admin_"),
-        CallbackQueryHandler(create_backup_callback, pattern="^admin_create_backup"),
-        CallbackQueryHandler(admin_back_callback, pattern="^admin_back$"),
-    ]
+    """Возвращает только обработчики без CommandHandler (обрабатывается в main.py)"""
+    return []

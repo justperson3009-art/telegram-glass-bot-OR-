@@ -33,16 +33,35 @@ def init_db():
             first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             total_searches INTEGER DEFAULT 0,
-            active_category TEXT DEFAULT 'glass'
+            active_category TEXT DEFAULT 'glass',
+            role TEXT DEFAULT 'user'
         )
     """)
 
-    # Миграция — добавляем колонку если её нет
+    # Миграция — добавляем колонки если их нет
     try:
         cursor.execute("ALTER TABLE users ADD COLUMN active_category TEXT DEFAULT 'glass'")
         conn.commit()
     except:
-        pass  # Колонка уже есть
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+        conn.commit()
+    except:
+        pass
+
+    # Подписки
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            plan TEXT DEFAULT 'free',
+            is_active INTEGER DEFAULT 1,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+    """)
     
     # История поисков
     cursor.execute("""
@@ -430,3 +449,108 @@ def get_latest_feedback(limit=20):
     results = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return results
+
+
+# === Роли и помощники ===
+
+def get_user_role(user_id):
+    """Получить роль пользователя: admin, helper, user"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT role FROM users WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row["role"] if row else "user"
+
+
+def set_user_role(user_id, role):
+    """Установить роль пользователя"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET role = ? WHERE user_id = ?", (role, user_id))
+    conn.commit()
+    conn.close()
+
+
+def get_helpers():
+    """Получить список помощников"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE role = 'helper' ORDER BY first_seen DESC")
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+
+def is_admin(user_id):
+    """Проверить что пользователь — админ"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT role FROM users WHERE user_id = ? AND is_blocked = 0", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row and row["role"] == "admin"
+
+
+def is_helper(user_id):
+    """Проверить что пользователь — помощник"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT role FROM users WHERE user_id = ? AND is_blocked = 0", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row and row["role"] in ("admin", "helper")
+
+
+# === Подписки ===
+
+def add_subscription(user_id, plan="free", days=30):
+    """Добавить/обновить подписку"""
+    from datetime import datetime, timedelta
+    conn = get_connection()
+    cursor = conn.cursor()
+    expires = (datetime.now() + timedelta(days=days)).isoformat()
+    cursor.execute("""
+        INSERT INTO subscriptions (user_id, plan, is_active, expires_at)
+        VALUES (?, ?, 1, ?)
+        ON CONFLICT DO NOTHING
+    """, (user_id, plan, expires))
+    conn.commit()
+    conn.close()
+
+
+def get_subscription(user_id):
+    """Получить подписку пользователя"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM subscriptions 
+        WHERE user_id = ? AND is_active = 1
+        ORDER BY created_at DESC LIMIT 1
+    """, (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_subscription_stats():
+    """Статистика подписок"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE is_blocked = 0")
+    total_users = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(DISTINCT user_id) as total FROM subscriptions WHERE is_active = 1")
+    active_subs = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT plan, COUNT(*) as cnt FROM subscriptions WHERE is_active = 1 GROUP BY plan")
+    plans = {row["plan"]: row["cnt"] for row in cursor.fetchall()}
+
+    conn.close()
+    return {
+        "total_users": total_users,
+        "active_subscriptions": active_subs,
+        "free_users": total_users - active_subs,
+        "plans": plans
+    }

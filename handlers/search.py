@@ -6,7 +6,8 @@ from telegram.ext import ContextTypes
 from utils.search import find_compatible_models, get_suggestions
 from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback
 from config import get_text, get_partner_link
-from keyboards import get_main_keyboard, get_admin_keyboard, get_keyboard_by_role
+from keyboards import get_keyboard_by_role
+from database import get_user_role
 
 
 async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -27,8 +28,8 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update_popular_search(user_input)
 
     # Клавиатура возврата в меню
-    is_admin = (user_id == context.user_data.get("admin_id", 0)) or (user_id == int(__import__('config').ADMIN_ID))
-    menu_keyboard = get_keyboard_by_role(is_admin)
+    role = get_user_role(user_id)
+    menu_keyboard = get_keyboard_by_role(role)
 
     if result["found"]:
         # Нашли!

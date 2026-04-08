@@ -3,9 +3,9 @@
 """
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from database import add_or_update_user, get_user, set_user_category
+from database import add_or_update_user, get_user, set_user_category, get_user_role
 from config import get_text, ADMIN_ID, CATEGORIES, SECRET_ADMIN_WORD
-from keyboards import get_main_keyboard, get_admin_keyboard, get_keyboard_by_role
+from keyboards import get_keyboard_by_role
 
 
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -25,8 +25,8 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["category"] = "glass"
     set_user_category(user.id, "glass")
 
-    is_admin = (user.id == ADMIN_ID)
-    keyboard = get_keyboard_by_role(is_admin)
+    role = get_user_role(user.id)
+    keyboard = get_keyboard_by_role(role)
     text = get_text(lang, "start")
 
     await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
@@ -37,7 +37,6 @@ async def category_button_handler(update: Update, context: ContextTypes.DEFAULT_
     user_input = update.message.text.strip()
     user_id = update.effective_user.id
 
-    # Определяем категорию по тексту кнопки
     category_map = {
         "🔍 Подбор стёкол": "glass",
         "📱 Чехлы": "case",
@@ -57,8 +56,8 @@ async def category_button_handler(update: Update, context: ContextTypes.DEFAULT_
     if not cat_info:
         return
 
-    is_admin = (user_id == ADMIN_ID)
-    keyboard = get_keyboard_by_role(is_admin)
+    role = get_user_role(user_id)
+    keyboard = get_keyboard_by_role(role)
 
     if cat_info["active"]:
         text = f"{cat_info['emoji']} **{cat_info['label']}**\n\n{cat_info['hint']}"
@@ -71,9 +70,8 @@ async def category_button_handler(update: Update, context: ContextTypes.DEFAULT_
 async def status_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка кнопки 👤 Мой статус"""
     user_id = update.effective_user.id
-    lang = context.user_data.get("lang", "ru")
 
-    from database import get_user
+    from database import get_user, get_subscription
     db_user = get_user(user_id)
 
     if not db_user:
@@ -83,17 +81,26 @@ async def status_button_handler(update: Update, context: ContextTypes.DEFAULT_TY
         category = db_user.get("active_category", "glass")
         cat_info = CATEGORIES.get(category, {})
         cat_label = cat_info.get("label", category)
+        role = db_user.get("role", "user")
+        role_names = {"admin": "👑 Админ", "helper": "🔧 Помощник", "user": "👤 Пользователь"}
+        role_name = role_names.get(role, role)
+
+        sub = get_subscription(user_id)
+        sub_text = "Бесплатный"
+        if sub and sub.get("is_active"):
+            sub_text = f"{sub.get('plan', 'free').upper()} (до {sub.get('expires_at', '?')[:10]})"
 
         text = (
             f"👤 **Ваш статус:**\n\n"
+            f"🎭 Роль: **{role_name}**\n"
             f"📊 Всего поисков: **{total}**\n"
-            f"📂 Активная категория: **{cat_label}**\n"
-            f"🆔 ID: `{user_id}`\n\n"
-            f"🔜 Скоро будет доступна подписка!"
+            f"📂 Категория: **{cat_label}**\n"
+            f"💳 Подписка: **{sub_text}**\n"
+            f"🆔 ID: `{user_id}`"
         )
 
-    is_admin = (user_id == ADMIN_ID)
-    keyboard = get_keyboard_by_role(is_admin)
+    role = get_user_role(user_id)
+    keyboard = get_keyboard_by_role(role)
 
     await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
 
@@ -104,10 +111,18 @@ async def secret_admin_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     if user_id != ADMIN_ID:
         return
 
-    context.user_data["admin_state"] = "panel"
+    context.user_data["admin_state"] = "admin_panel"
 
-    from handlers.admin import admin_panel
-    await admin_panel(update, context)
+    from database import set_user_role
+    set_user_role(user_id, "admin")
+
+    from keyboards import get_admin_keyboard
+    text = (
+        "👑 **Панель администратора**\n\n"
+        "Выберите действие:"
+    )
+    from keyboards import get_admin_panel_keyboard
+    await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
 
 
 async def feedback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

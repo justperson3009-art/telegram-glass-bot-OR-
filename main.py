@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from telegram.request import HTTPXRequest
 
 from config import BOT_TOKEN, PROXY_URL, SECRET_ADMIN_WORD, ADMIN_ID
-from database import init_db, add_or_update_user, get_user
+from database import init_db, add_or_update_user, get_user, get_user_role, set_user_role
 from handlers.start import (
     start_handler, feedback_handler, handle_feedback,
     category_button_handler, status_button_handler, secret_admin_handler
@@ -16,7 +16,11 @@ from handlers.search import (
     history_callback, popular_callback, back_to_main_callback,
     feedback_yes_callback, feedback_no_callback
 )
-from handlers.admin import get_admin_handlers
+from handlers import admin as admin_handler
+from keyboards import (
+    get_keyboard_by_role, get_admin_panel_keyboard, get_add_models_keyboard,
+    get_helpers_keyboard
+)
 from utils.logger import logger, log_error
 from utils.backup import backup_compatibility_json, backup_database
 import asyncio
@@ -34,23 +38,18 @@ def create_app():
 
     app = ApplicationBuilder().token(BOT_TOKEN).request(request).build()
 
-    # Инициализация БД
     init_db()
 
     # Команды
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("feedback", feedback_handler))
 
-    # Inline callbacks (feedback, история, популярное)
+    # Inline callbacks
     app.add_handler(CallbackQueryHandler(feedback_yes_callback, pattern="^feedback_yes_"))
     app.add_handler(CallbackQueryHandler(feedback_no_callback, pattern="^feedback_no_"))
     app.add_handler(CallbackQueryHandler(history_callback, pattern="^my_history"))
     app.add_handler(CallbackQueryHandler(popular_callback, pattern="^popular_searches"))
     app.add_handler(CallbackQueryHandler(back_to_main_callback, pattern="^back_to_main"))
-
-    # Админ-панель
-    for handler in get_admin_handlers():
-        app.add_handler(handler)
 
     # Основной обработчик сообщений
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_main_message))
@@ -66,7 +65,6 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     user_id = update.effective_user.id
     user_input = update.message.text.strip()
 
-    # Сохраняем пользователя
     add_or_update_user(
         user_id=user_id,
         username=update.effective_user.username,
@@ -75,7 +73,9 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         language_code=update.effective_user.language_code
     )
 
-    context.user_data["admin_id"] = ADMIN_ID
+    role = get_user_role(user_id)
+    is_admin_user = (role == "admin")
+    is_helper_user = (role in ("admin", "helper"))
 
     # Скрытый вход в админку
     if user_input == SECRET_ADMIN_WORD:
@@ -93,10 +93,94 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await handle_feedback(update, context)
         return
 
-    # Проверяем не в админ-панели ли мы
+    # Проверяем админ-состояние
     if context.user_data.get("admin_state") is not None:
-        from handlers.admin import handle_admin_input
-        await handle_admin_input(update, context)
+        await admin_handler.handle_admin_input(update, context)
+        return
+
+    # === КНОПКИ ГЛАВНОГО МЕНЮ ===
+
+    if user_input == "⚡ Управление":
+        if is_admin_user:
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        return
+
+    if user_input == "➕ Добавить в базу":
+        if is_helper_user:
+            context.user_data["admin_state"] = "add_models"
+            await admin_handler.show_add_models(update, context)
+        return
+
+    if user_input == "📊 Статистика бота":
+        await admin_handler.show_admin_stats(update, context)
+        return
+
+    if user_input == "👥 Подписки":
+        await admin_handler.show_subscriptions(update, context)
+        return
+
+    if user_input == "➕ Добавить модели":
+        await admin_handler.show_add_models(update, context)
+        return
+
+    if user_input == "👤 Помощники":
+        await admin_handler.show_helpers(update, context)
+        return
+
+    if user_input == "📩 Рассылка":
+        await admin_handler.show_broadcast(update, context)
+        return
+
+    if user_input == "🚫 Блок/Разблок":
+        await admin_handler.show_block_unblock(update, context)
+        return
+
+    if user_input == "🏠 В меню":
+        context.user_data["admin_state"] = None
+        keyboard = get_keyboard_by_role(role)
+        await update.message.reply_text("🏠 Главное меню", reply_markup=keyboard)
+        return
+
+    if user_input == "⬅️ Назад":
+        state = context.user_data.get("admin_state")
+        if state == "add_models":
+            await admin_handler.show_add_models(update, context)
+        elif state in ("helpers_menu", "add_helper", "remove_helper"):
+            await admin_handler.show_helpers(update, context)
+        else:
+            await admin_handler.go_back_to_admin(update, context)
+        return
+
+    if user_input == "👥 Список помощников":
+        await admin_handler.list_helpers(update, context)
+        return
+
+    if user_input == "➕ Назначить помощника":
+        await admin_handler.assign_helper(update, context)
+        return
+
+    if user_input == "🚫 Снять помощника":
+        await admin_handler.remove_helper(update, context)
+        return
+
+    # Категории добавления моделей (для админа/помощника)
+    if user_input == "🔍 Добавить стёкла":
+        await admin_handler.add_glass_handler(update, context)
+        return
+
+    if user_input in ("📱 Добавить чехлы", "🖥️ Добавить дисплеи", "🔋 Добавить АКБ", "🧴 Добавить переклейку"):
+        cat_map = {"📱 Добавить чехлы": "case", "🖥️ Добавить дисплеи": "display", "🔋 Добавить АКБ": "battery", "🧴 Добавить переклейку": "oca"}
+        context.user_data["admin_state"] = f"add_{cat_map[user_input]}"
+        context.user_data["add_category"] = cat_map[user_input]
+        await update.message.reply_text(
+            f"📦 **Добавить модели**\n\n"
+            f"Формат: `название_группы: модель1, модель2`\n\n"
+            f"⬅️ Назад — вернуться",
+            reply_markup=get_add_models_keyboard(),
+            parse_mode="Markdown"
+        )
         return
 
     # Проверяем текстовые кнопки категорий
@@ -105,50 +189,15 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await category_button_handler(update, context)
         return
 
-    # Кнопка статуса
     if user_input == "👤 Мой статус":
         await status_button_handler(update, context)
-        return
-
-    # Кнопка админ-панели
-    if user_input == "🔧 Админ-панель":
-        if user_id == ADMIN_ID:
-            from handlers.admin import admin_panel
-            context.user_data["admin_state"] = "panel"
-            await admin_panel(update, context)
-        return
-
-    # Текстовые кнопки админки
-    admin_commands = {
-        "📊 Статистика": "admin_stats",
-        "✅ Обратная связь": "admin_feedback",
-        "➕ Добавить группу": "admin_add_group",
-        "🗑 Удалить группу": "admin_delete_group",
-        "📩 Рассылка": "admin_broadcast",
-        "👥 Пользователи": "admin_users",
-        "🔥 Популярное": "admin_popular",
-        "💾 Бэкапы": "admin_backups",
-        "⚙️ Настройки": "admin_settings",
-    }
-
-    if user_input in admin_commands and context.user_data.get("admin_state") is not None:
-        from handlers.admin import admin_callback
-        # Создаём фейковый query для совместимости
-        class FakeQuery:
-            def __init__(self, data):
-                self.data = data
-                self.message = update.message
-            async def answer(self):
-                pass
-        update.callback_query = FakeQuery(admin_commands[user_input])
-        await admin_callback(update, context)
         return
 
     # Обычный поиск
     try:
         await search_handler(update, context)
     except Exception as e:
-        log_error(e, {"user_id": user_id, "query": update.message.text})
+        log_error(e, {"user_id": user_id, "query": user_input})
         await update.message.reply_text("❌ Произошла ошибка. Попробуйте ещё раз.")
 
 
@@ -156,8 +205,6 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ошибок"""
     error = context.error
     log_error(error, {"update": str(update)})
-
-    # Уведомляем админа
     try:
         await context.bot.send_message(
             chat_id=ADMIN_ID,
@@ -170,7 +217,6 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Запуск бота"""
-    # Бэкап при запуске
     try:
         backup_compatibility_json()
         backup_database()
