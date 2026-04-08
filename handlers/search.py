@@ -3,7 +3,7 @@
 """
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from utils.search import find_compatible_models, get_suggestions
+from utils.search_categories import find_compatible_models_in_category, get_all_models_count
 from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback
 from config import get_text, get_partner_link
 from keyboards import get_keyboard_by_role
@@ -18,8 +18,11 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["lang"] = lang
 
-    # Ищем
-    result = find_compatible_models(user_input)
+    # Определяем категорию
+    category = context.user_data.get("category", "glass")
+
+    # Ищем в выбранной категории
+    result = find_compatible_models_in_category(category, user_input)
 
     # Записываем в БД
     add_search(user_id, user_input, result["found"])
@@ -57,13 +60,6 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # Не нашли
         text = get_text(lang, "not_found")
-
-        # Подсказки
-        suggestions = get_suggestions(user_input, limit=5)
-        if suggestions:
-            text += "\n\n💡 **Попробуйте:**\n"
-            for s in suggestions[:3]:
-                text += f"• {s}\n"
 
         await update.message.reply_text(text, reply_markup=menu_keyboard, parse_mode="Markdown")
 

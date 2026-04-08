@@ -12,6 +12,7 @@ from database import (
     get_subscription_stats, is_admin as db_is_admin
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
+from utils.search_categories import add_models_to_category, remove_group_from_category, get_category_stats, load_category
 from utils.backup import backup_compatibility_json, backup_database, get_backup_list
 from keyboards import (
     get_admin_panel_keyboard, get_helpers_keyboard, get_keyboard_by_role
@@ -39,6 +40,7 @@ async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     feedback = get_feedback_stats()
     subs = get_subscription_stats()
     groups = get_all_groups()
+    cat_stats = get_category_stats()
 
     text = (
         f"📊 **Статистика бота:**\n\n"
@@ -47,6 +49,12 @@ async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🔍 Всего поисков: **{stats['total_searches']}**\n"
         f"📱 Моделей в базе: **{sum(len(m) for m in groups.values())}**\n"
         f"📦 Групп: **{len(groups)}**\n\n"
+        f"📂 **Файлы категорий:**\n"
+        f"  • 🔍 Стёкла: **{cat_stats['glass']['models']}** моделей\n"
+        f"  • 📱 Чехлы: **{cat_stats['case']['models']}** моделей\n"
+        f"  • 🖥️ Дисплеи: **{cat_stats['display']['models']}** моделей\n"
+        f"  • 🔋 АКБ: **{cat_stats['battery']['models']}** моделей\n"
+        f"  • 🧴 Переклейка: **{cat_stats['oca']['models']}** моделей\n\n"
         f"📈 Активность:\n"
         f"  • Сегодня: **{stats['today_active']}**\n"
         f"  • Неделя: **{stats['week_active']}**\n\n"
@@ -333,22 +341,30 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 def _handle_add_model(update, context, category):
-    """Обработка добавления моделей"""
+    """Обработка добавления моделей в категорию"""
     user_input = update.message.text.strip()
     if ":" in user_input:
         group_name, models_str = user_input.split(":", 1)
         models = [m.strip() for m in models_str.split(",")]
     else:
         models = [m.strip() for m in user_input.split(",")]
-        group_name = f"{category}_{len(get_all_groups()) + 1}_group"
+        data = load_category(category)
+        group_name = f"{category}_{len(data) + 1}_group"
 
-    add_models_to_group(group_name, models)
+    add_models_to_category(category, group_name, models)
     update.message.reply_text(
         f"✅ Добавлено **{len(models)}** моделей в группу `{group_name}`",
-        reply_markup=get_add_models_keyboard(),
+        reply_markup=ReplyKeyboardMarkup(keyboard=[
+            [KeyboardButton(text="🔍 Добавить стёкла")],
+            [KeyboardButton(text="📱 Добавить чехлы")],
+            [KeyboardButton(text="🖥️ Добавить дисплеи")],
+            [KeyboardButton(text="🔋 Добавить АКБ")],
+            [KeyboardButton(text="🧴 Добавить переклейку")],
+            [KeyboardButton(text="⬅️ Назад")],
+        ], resize_keyboard=True),
         parse_mode="Markdown"
     )
-    context.user_data["admin_state"] = None
+    context.user_data["admin_state"] = "add_models"
 
 
 def get_admin_handlers():
