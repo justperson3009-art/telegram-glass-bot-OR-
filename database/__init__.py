@@ -36,6 +36,13 @@ def init_db():
             active_category TEXT DEFAULT 'glass'
         )
     """)
+
+    # Миграция — добавляем колонку если её нет
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN active_category TEXT DEFAULT 'glass'")
+        conn.commit()
+    except:
+        pass  # Колонка уже есть
     
     # История поисков
     cursor.execute("""
@@ -89,6 +96,21 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(user_id)
         )
     """)
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                query TEXT,
+                matched_model TEXT,
+                rating INTEGER,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id)
+            )
+        """)
+        conn.commit()
+    except:
+        pass  # Таблица уже есть
     
     conn.commit()
     conn.close()
