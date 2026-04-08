@@ -4,9 +4,11 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не найден в .env файле!")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "5164389862"))
 PROXY_URL = os.getenv("PROXY_URL")
 
