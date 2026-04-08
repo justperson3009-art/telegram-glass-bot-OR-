@@ -20,6 +20,11 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         language_code=user.language_code
     )
 
+    # ADMIN_ID автоматически получает роль admin
+    if user.id == ADMIN_ID:
+        from database import set_user_role
+        set_user_role(user.id, "admin")
+
     lang = user.language_code or "ru"
     context.user_data["lang"] = lang
     context.user_data["category"] = "glass"
