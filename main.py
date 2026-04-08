@@ -5,9 +5,9 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from telegram.request import HTTPXRequest
 
-from config import BOT_TOKEN, PROXY_URL
-from database import init_db, add_or_update_user, get_user
-from handlers.start import start_handler, feedback_handler, handle_feedback
+from config import BOT_TOKEN, PROXY_URL, SECRET_ADMIN_WORD
+from database import init_db, add_or_update_user, get_user, get_user_category
+from handlers.start import start_handler, feedback_handler, handle_feedback, category_callback, secret_admin_handler
 from handlers.search import (
     search_handler,
     history_callback, popular_callback, back_to_main_callback,
@@ -37,8 +37,11 @@ def create_app():
     # Команды
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("feedback", feedback_handler))
-    
-    # Админ-панель
+
+    # Категории (inline callback)
+    app.add_handler(CallbackQueryHandler(category_callback, pattern="^cat_"))
+
+    # Админ-панель (убираем /admin — только скрытый вход)
     for handler in get_admin_handlers():
         app.add_handler(handler)
 
@@ -61,7 +64,8 @@ def create_app():
 async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Главный обработчик всех текстовых сообщений"""
     user_id = update.effective_user.id
-    
+    user_input = update.message.text.strip()
+
     # Сохраняем пользователя
     add_or_update_user(
         user_id=user_id,
@@ -70,24 +74,29 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         last_name=update.effective_user.last_name,
         language_code=update.effective_user.language_code
     )
-    
+
+    # Скрытый вход в админку
+    if user_input == SECRET_ADMIN_WORD:
+        await secret_admin_handler(update, context)
+        return
+
     # Проверяем не заблокирован ли
     db_user = get_user(user_id)
     if db_user and db_user.get("is_blocked"):
         await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
         return
-    
+
     # Проверяем не ждём ли мы отзыв
     if context.user_data.get("waiting_feedback"):
         await handle_feedback(update, context)
         return
-    
+
     # Проверяем не в админ-панели ли мы
     if context.user_data.get("admin_state") is not None:
         from handlers.admin import handle_admin_input
         await handle_admin_input(update, context)
         return
-    
+
     # Обычный поиск
     try:
         await search_handler(update, context)

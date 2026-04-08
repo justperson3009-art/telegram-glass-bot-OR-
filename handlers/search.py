@@ -5,7 +5,26 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from utils.search import find_compatible_models, get_suggestions
 from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback
-from config import get_text, get_partner_link
+from config import get_text, get_partner_link, CATEGORIES
+
+
+def _make_category_keyboard(current_category):
+    """Создать кнопки переключения категорий"""
+    keyboard = []
+    row = []
+    for key, cat in CATEGORIES.items():
+        label = f"{cat['emoji']} {cat['label']}"
+        if key == current_category:
+            label += " ✅"
+        elif not cat["active"]:
+            label += " 🚧"
+        row.append(InlineKeyboardButton(label, callback_data=f"cat_{key}"))
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+    return keyboard
 
 
 async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,11 +60,14 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Добавляем партнёрскую ссылку
         text += f"\n{get_partner_link(user_input)}"
 
-        # Кнопки обратной связи
+        # Кнопки обратной связи + категории
+        current_cat = context.user_data.get("category", "glass")
         keyboard = [
-            [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{user_input}")],
-            [InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{user_input}")],
+            [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{user_input}"),
+             InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{user_input}")],
         ]
+        keyboard.extend(_make_category_keyboard(current_cat))
+
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -60,7 +82,11 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for s in suggestions[:3]:
                 text += f"• {s}\n"
 
-        await update.message.reply_text(text, parse_mode="Markdown")
+        current_cat = context.user_data.get("category", "glass")
+        keyboard = _make_category_keyboard(current_cat)
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text(text, reply_markup=reply_markup, parse_mode="Markdown")
 
 
 async def feedback_yes_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

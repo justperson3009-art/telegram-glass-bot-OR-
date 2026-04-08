@@ -21,7 +21,7 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Таблица пользователей
+    # Пользователи
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
@@ -32,7 +32,8 @@ def init_db():
             is_blocked INTEGER DEFAULT 0,
             first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            total_searches INTEGER DEFAULT 0
+            total_searches INTEGER DEFAULT 0,
+            active_category TEXT DEFAULT 'glass'
         )
     """)
     
@@ -99,14 +100,14 @@ def add_or_update_user(user_id, username=None, first_name=None, last_name=None, 
     """Добавить или обновить пользователя"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
     exists = cursor.fetchone()
-    
+
     if exists:
         cursor.execute("""
-            UPDATE users 
-            SET username = ?, first_name = ?, last_name = ?, 
+            UPDATE users
+            SET username = ?, first_name = ?, last_name = ?,
                 language_code = COALESCE(?, language_code),
                 last_seen = CURRENT_TIMESTAMP
             WHERE user_id = ?
@@ -116,9 +117,28 @@ def add_or_update_user(user_id, username=None, first_name=None, last_name=None, 
             INSERT INTO users (user_id, username, first_name, last_name, language_code)
             VALUES (?, ?, ?, ?, ?)
         """, (user_id, username, first_name, last_name, language_code))
-    
+
     conn.commit()
     conn.close()
+
+
+def set_user_category(user_id, category):
+    """Установить активную категорию пользователя"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET active_category = ? WHERE user_id = ?", (category, user_id))
+    conn.commit()
+    conn.close()
+
+
+def get_user_category(user_id):
+    """Получить активную категорию пользователя"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT active_category FROM users WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row["active_category"] if row else "glass"
 
 
 def get_user(user_id):

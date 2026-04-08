@@ -11,16 +11,15 @@ if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не найден в .env файле!")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "5164389862"))
 PROXY_URL = os.getenv("PROXY_URL")
+SECRET_ADMIN_WORD = os.getenv("SECRET_ADMIN_WORD", "admin_secret_2026")
 
 # === Тексты ===
 
 TEXTS = {
     "ru": {
         "start": (
-            "📱 **Привет! Я бот для подбора стёкол.**\n\n"
-            "Напишите модель телефона (можно частично),\n"
-            "и я скажу для каких моделей подходит стекло.\n\n"
-            "Примеры: `iPhone 15`, `Samsung A55`, `Redmi Note 13`"
+            "📱 **Привет! Я бот для подбора аксессуаров.**\n\n"
+            "Выберите что ищете, затем напишите модель телефона:"
         ),
         "feedback_prompt": (
             "✍️ Напишите ваше замечание или предложение.\n\n"
@@ -120,5 +119,40 @@ def get_partner_link(brand):
     elif "xiaomi" in brand_lower or "redmi" in brand_lower or "poco" in brand_lower:
         return PARTNER_LINKS.get("xiaomi", PARTNER_LINKS["default"])
     return PARTNER_LINKS["default"]
+
+
+# === Категории аксессуаров ===
+CATEGORIES = {
+    "glass": {
+        "emoji": "🔍",
+        "label": "Стёкла",
+        "active": True,
+        "hint": "Напишите модель телефона, и я подберу совместимые стёкла.\n\nПримеры: `iPhone 15`, `Samsung A55`, `Redmi Note 13`"
+    },
+    "case": {
+        "emoji": "📱",
+        "label": "Чехлы",
+        "active": False,
+        "hint": "🚧 Раздел в разработке. Скоро будет доступен!"
+    },
+    "display": {
+        "emoji": "🖥️",
+        "label": "Дисплеи",
+        "active": False,
+        "hint": "🚧 Раздел в разработке. Скоро будет доступен!"
+    },
+    "battery": {
+        "emoji": "🔋",
+        "label": "АКБ",
+        "active": False,
+        "hint": "🚧 Раздел в разработке. Скоро будет доступен!"
+    },
+    "oca": {
+        "emoji": "🧴",
+        "label": "Стёкла для переклейки",
+        "active": False,
+        "hint": "🚧 Раздел в разработке. Скоро будет доступен!"
+    }
+}
 
 
