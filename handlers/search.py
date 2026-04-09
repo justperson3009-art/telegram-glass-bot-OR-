@@ -49,9 +49,9 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         category_name = category_names.get(category, "🔍 Стекло")
 
-        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ И АКБ (цена + совместимость) ===
+        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ И АКБ (только цена) ===
         if category in ("display", "battery"):
-            # Берём первый найденный результат - это группа моделей с ценой
+            # Берём первый найденный результат
             first_model = result["models"][0]
             
             # Извлекаем цену из формата "Xiaomi Redmi 9A/9C/10A — 27 BYN"
@@ -61,26 +61,8 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 full_name = first_model
                 price = None
 
-            # Показываем ТОЛЬКО искомую модель (то что ввёл пользователь)
+            # Показываем ТОЛЬКО искомую модель с ценой
             text = f"**{category_name}**\n\n📱 {user_input} — {price}" if price else f"**{category_name}**\n\n📱 {user_input}"
-
-            # Все модели из группы - это совместимые
-            if result["models"]:
-                text += "\n\n✅ **Совместимость:**"
-                seen_models = set()
-                for model in result["models"]:
-                    # Извлекаем только название без цены
-                    if " — " in model:
-                        clean_name = model.rsplit(" — ", 1)[0].strip()
-                    else:
-                        clean_name = model.strip()
-                    
-                    # Разбиваем по слэшу если есть (Redmi 9A/9C/10A → отдельно)
-                    split_models = [m.strip() for m in clean_name.split("/")]
-                    for m in split_models:
-                        if m and m not in seen_models:
-                            seen_models.add(m)
-                            text += f"\n• {m}"
 
             # Пометка про ориентировочную цену
             text += "\n\n💰 **Цена ориентировочная**"
