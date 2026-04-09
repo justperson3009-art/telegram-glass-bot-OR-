@@ -215,6 +215,13 @@ def find_compatible_models_in_category(category, user_input):
     data = load_category(category)
     user_normalized = normalize_text(user_input)
 
+    # === СПЕЦИАЛЬНЫЙ ПОИСК ДЛЯ АКБ ПО МАРКИРОВКЕ ===
+    if category == "battery":
+        # Ищем по маркировке аккумулятора (BN56, BM41 и т.д.)
+        battery_mark_result = _find_battery_by_mark(data, user_input)
+        if battery_mark_result["found"]:
+            return battery_mark_result
+
     # Для дисплеев и АКБ используем поисковый индекс
     if category in ("display", "battery") and isinstance(data, dict) and "search_index" in data:
         compatibility = data.get("compatibility", {})
@@ -438,3 +445,33 @@ def add_models_smart(category, raw_models_str):
     save_category(category, cat_data)
 
     return {"added": len(new_models), "skipped": skipped, "group": group_name, "models": new_models}
+
+
+# === ПОИСК АКБ ПО МАРКИРОВКЕ ===
+
+def _find_battery_by_mark(data, user_input):
+    """
+    Ищем АКБ по маркировке (BN56, BM41 и т.д.)
+    Формат записи: "Аккумулятор Redmi 9A/9C (BN56) — 20 BYN"
+    """
+    user_normalized = normalize_text(user_input)
+    
+    # Проверяем все записи в базе
+    for group_name, models in data.items():
+        for model in models:
+            # Ищем маркировку в скобках
+            mark_match = re.search(r'\(([^)]+)\)', model)
+            if mark_match:
+                battery_mark = mark_match.group(1).lower().strip()
+                # Сравниваем с запросом пользователя
+                if user_normalized == battery_mark or user_normalized in battery_mark or battery_mark in user_normalized:
+                    return {
+                        "found": True,
+                        "models": models,
+                        "exact_match": True,
+                        "matched_model": model,
+                        "confidence": 1.0,
+                        "mark_match": True
+                    }
+    
+    return {"found": False}
