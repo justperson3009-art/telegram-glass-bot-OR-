@@ -36,23 +36,31 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if result["found"]:
         # Нашли!
+        # Формируем заголовок в зависимости от категории
+        category_names = {
+            "glass": "Стекло",
+            "display": "Дисплей",
+            "battery": "Аккумулятор",
+            "case": "Чехол",
+            "oca": "Стекло для переклейки"
+        }
+        category_name = category_names.get(category, "Стекло")
+
         if result.get("exact_match"):
-            text = get_text(lang, "found_exact", query=user_input)
+            text = f"🔎 **{category_name} от {user_input} подходит для всех этих моделей:**"
         else:
-            text = get_text(lang, "found_similar",
-                          matched_model=result["matched_model"])
+            text = f"🔍 **Возможно вы имели в виду {result['matched_model']}?** {category_name} подходит для:"
 
         text += "\n\n"
-        
-        # Для дисплеев и АКБ добавляем пометку про ориентировочную цену
-        if category in ("display", "battery"):
-            text += "💰 **Цена ориентировочная**\n\n"
-        
-        for model in result["models"]:
-            text += f"• {model}\n"
 
-        # Добавляем партнёрскую ссылку
-        text += f"\n{get_partner_link(user_input)}"
+        for model in result["models"]:
+            # Убираем дублирование "(цена ориентировочная)" если оно есть в названии
+            clean_model = model.replace(" (цена ориентировочная)", "").strip()
+            text += f"• {clean_model}\n"
+
+        # Для дисплеев и АКБ добавляем пометку про ориентировочную цену ВНИЗУ (один раз)
+        if category in ("display", "battery"):
+            text += "\n\n💰 **Цена ориентировочная**"
 
         # Получаем рейтинг совместимости
         compat = get_model_compatibility(result["matched_model"])
@@ -66,7 +74,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 emoji = "❌"
                 label = "Не подтверждено"
-            
+
             text += f"\n\n{emoji} **Совместимость: {compat['percent']}%** ({label})\n"
             text += f"👍 Подошло: {compat['positive']} | 👎 Не подошло: {compat['negative']}"
 
