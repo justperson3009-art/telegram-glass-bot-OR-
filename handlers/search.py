@@ -4,7 +4,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from utils.search_categories import find_compatible_models_in_category, get_all_models_count
-from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback
+from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback, get_model_compatibility
 from config import get_text, get_partner_link
 from keyboards import get_keyboard_by_role
 from database import get_user_role
@@ -48,6 +48,22 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Добавляем партнёрскую ссылку
         text += f"\n{get_partner_link(user_input)}"
+
+        # Получаем рейтинг совместимости
+        compat = get_model_compatibility(result["matched_model"])
+        if compat["percent"] is not None:
+            if compat["status"] == "confirmed":
+                emoji = "✅"
+                label = "Подтверждено"
+            elif compat["status"] == "partial":
+                emoji = "⚠️"
+                label = "Совместимо"
+            else:
+                emoji = "❌"
+                label = "Не подтверждено"
+            
+            text += f"\n\n{emoji} **Совместимость: {compat['percent']}%** ({label})\n"
+            text += f"👍 Подошло: {compat['positive']} | 👎 Не подошло: {compat['negative']}"
 
         # Кнопки обратной связи
         keyboard = [

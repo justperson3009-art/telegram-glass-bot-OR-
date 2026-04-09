@@ -214,7 +214,134 @@ def find_compatible_models_in_category(category, user_input):
     return {"found": False}
 
 
-# === УМНОЕ ДОБАВЛЕНИЕ (БЕЗ ДУБЛЕЙ И КОНФЛИКТОВ) ===
+# === АЛИАСЫ ДЛЯ ОБЛЕГЧЁННОГО ПОИСКА ===
+
+def generate_model_aliases(model_name):
+    """
+    Генерирует все варианты написания модели для поиска.
+    Пример: 'Samsung Galaxy A32 5G' →
+      'samsung galaxy a32 5g', 'samsung a32 5g', 'galaxy a32 5g',
+      'samsung a32', 'galaxy a32', 'a32 5g', 'a32'
+    """
+    normalized = normalize_text(model_name)
+    words = normalized.split()
+
+    aliases = set()
+    aliases.add(normalized)  # Полное название
+
+    # Слова которые можно убирать при поиске
+    skip_words = {"galaxy", "the", "and", "для"}
+
+    # Генерируем все подпоследовательности слов (от 2 слов и более)
+    for i in range(len(words)):
+        for j in range(i + 1, len(words) + 1):
+            sub = " ".join(words[i:j])
+            aliases.add(sub)
+            # Без skip_words
+            filtered = [w for w in words[i:j] if w not in skip_words]
+            if filtered and len(filtered) >= 1:
+                aliases.add(" ".join(filtered))
+
+    # Отдельно — только номер модели (A32, A55, 15 Pro и т.д.)
+    number_pattern = re.search(r'([A-Z]?\d+[A-Z]?(?:\s*Pro\s*Max|Plus|Pro|Lite|SE|FE)?(?:\s*5G)?)', model_name, re.IGNORECASE)
+    if number_pattern:
+        aliases.add(number_pattern.group(1).lower().strip())
+
+    return list(aliases)
+
+
+def build_search_index(category):
+    """Строит поисковый индекс с алиасами для категории"""
+    data = load_category(category)
+    index = {}
+
+    for group_name, models in data.items():
+        for model in models:
+            aliases = generate_model_aliases(model)
+            for alias in aliases:
+                if alias not in index:
+                    index[alias] = []
+                index[alias].append(model)
+
+    return index
+
+
+def find_compatible_models_in_category(category, user_input):
+    """Поиск моделей в конкретной категории с алиасами"""
+    data = load_category(category)
+    user_normalized = normalize_text(user_input)
+
+    # Шаг 1: Точное совпадение (оригинал)
+    for group in data.values():
+        for model in group:
+            if user_normalized in model.lower():
+                return {
+                    "found": True,
+                    "models": group,
+                    "exact_match": True,
+                    "matched_model": model,
+                    "confidence": 1.0
+                }
+
+    # Шаг 2: Поиск по алиасам
+    index = build_search_index(category)
+    if user_normalized in index:
+        matched_model = index[user_normalized][0]
+        # Находим группу с этой моделью
+        for group in data.values():
+            if matched_model in group:
+                return {
+                    "found": True,
+                    "models": group,
+                    "exact_match": True,
+                    "matched_model": matched_model,
+                    "confidence": 0.95,
+                    "alias_match": True
+                }
+
+    # Шаг 3: Ключевые слова (частичное совпадение по 2+ словам)
+    keywords = user_normalized.split()
+    if len(keywords) >= 2:
+        for group in data.values():
+            for model in group:
+                model_lower = model.lower()
+                matches = sum(1 for kw in keywords if kw in model_lower or _translate_keyword(kw) in model_lower)
+                if matches == len(keywords):
+                    return {
+                        "found": True,
+                        "models": group,
+                        "exact_match": True,
+                        "matched_model": model,
+                        "confidence": 0.9,
+                        "keyword_match": True
+                    }
+
+    # Шаг 4: Нечёткое совпадение (Levenshtein)
+    best_match = None
+    best_score = 0
+
+    for group in data.values():
+        for model in group:
+            model_normalized = normalize_text(model)
+            distance = levenshtein_distance(user_normalized, model_normalized)
+            max_len = max(len(user_normalized), len(model_normalized))
+            if max_len == 0:
+                continue
+            similarity = 1 - (distance / max_len)
+            if similarity > 0.7 and similarity > best_score:
+                best_score = similarity
+                best_match = {
+                    "found": True,
+                    "models": group,
+                    "exact_match": False,
+                    "matched_model": model,
+                    "confidence": similarity
+                }
+
+    if best_match:
+        return best_match
+
+    return {"found": False}
 
 def normalize_model_name(name):
     """Нормализует название: убирает лишние пробелы, приводит к нижнему регистру"""

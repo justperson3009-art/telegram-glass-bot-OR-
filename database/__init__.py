@@ -411,6 +411,80 @@ def add_feedback(user_id, query, matched_model, rating):
     conn.close()
 
 
+def get_model_compatibility(model_name):
+    """Получить рейтинг совместимости модели (в %)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Ищем все отзывы по этой модели (частичное совпадение)
+    cursor.execute("""
+        SELECT rating, COUNT(*) as cnt
+        FROM feedback
+        WHERE matched_model LIKE ?
+        GROUP BY rating
+    """, (f"%{model_name}%",))
+
+    results = {row["rating"]: row["cnt"] for row in cursor.fetchall()}
+    conn.close()
+
+    positive = results.get(1, 0)
+    negative = results.get(0, 0)
+    total = positive + negative
+
+    if total == 0:
+        return {"percent": None, "positive": 0, "negative": 0, "total": 0, "status": "unknown"}
+
+    percent = round((positive / total) * 100, 1)
+
+    if percent >= 80:
+        status = "confirmed"
+    elif percent >= 50:
+        status = "partial"
+    else:
+        status = "unconfirmed"
+
+    return {
+        "percent": percent,
+        "positive": positive,
+        "negative": negative,
+        "total": total,
+        "status": status
+    }
+
+
+def get_unconfirmed_models():
+    """Получить модели с низким рейтингом (<50%)"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT matched_model, 
+               SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as positive,
+               SUM(CASE WHEN rating = 0 THEN 1 ELSE 0 END) as negative,
+               COUNT(*) as total
+        FROM feedback
+        GROUP BY matched_model
+        HAVING total >= 3
+        ORDER BY CAST(SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*) ASC
+        LIMIT 20
+    """)
+
+    results = []
+    for row in cursor.fetchall():
+        percent = round((row["positive"] / row["total"]) * 100, 1) if row["total"] > 0 else 0
+        if percent < 50:
+            results.append({
+                "model": row["matched_model"],
+                "percent": percent,
+                "positive": row["positive"],
+                "negative": row["negative"],
+                "total": row["total"]
+            })
+
+    conn.close()
+    return results
+
+
 def get_feedback_stats():
     """Статистика обратной связи"""
     conn = get_connection()

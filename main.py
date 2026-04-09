@@ -161,6 +161,10 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.show_block_unblock(update, context)
         return
 
+    if user_input == "⚠️ Неподтверждённые":
+        await admin_handler.show_unconfirmed_models(update, context)
+        return
+
     if user_input == "👥 Список помощников":
         await admin_handler.list_helpers(update, context)
         return

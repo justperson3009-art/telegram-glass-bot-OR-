@@ -9,7 +9,7 @@ from database import (
     add_broadcast, get_broadcast_stats, get_popular_searches,
     get_setting, set_setting, get_feedback_stats, get_latest_feedback,
     get_helpers, set_user_role, get_user_role, add_subscription,
-    get_subscription_stats, is_admin as db_is_admin
+    get_subscription_stats, is_admin as db_is_admin, get_unconfirmed_models
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
 from utils.search_categories import add_models_smart, load_category, get_category_stats
@@ -227,6 +227,29 @@ async def show_block_unblock(update: Update, context: ContextTypes.DEFAULT_TYPE)
         "Формат: `block 123456789` или `unblock 123456789`\n\n"
         "⬅️ Назад — отмена"
     )
+
+
+async def show_unconfirmed_models(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показать модели с низкой совместимостью"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
+        return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
+
+    unconfirmed = get_unconfirmed_models()
+    if not unconfirmed:
+        text = "✅ **Все модели подтверждены!**\n\nНет моделей с низким рейтингом."
+    else:
+        text = "⚠️ **Модели с низкой совместимостью:**\n\n"
+        for m in unconfirmed:
+            text += f"• `{m['model']}` — **{m['percent']}%** ({m['positive']}✅ / {m['negative']}❌)\n"
+        text += "\n💡 Эти модели могут быть неверно определены."
+
+    kb = [
+        [KeyboardButton(text="📊 Статистика бота")],
+        [KeyboardButton(text="⬅️ Назад")],
+    ]
+    await send(text, reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
 
 
 async def go_back_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
