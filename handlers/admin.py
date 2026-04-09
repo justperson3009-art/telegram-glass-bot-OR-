@@ -12,7 +12,7 @@ from database import (
     get_subscription_stats, is_admin as db_is_admin
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
-from utils.search_categories import add_models_to_category, remove_group_from_category, get_category_stats, load_category
+from utils.search_categories import add_models_smart, load_category, get_category_stats
 from utils.backup import backup_compatibility_json, backup_database, get_backup_list
 from keyboards import (
     get_admin_panel_keyboard, get_helpers_keyboard, get_keyboard_by_role
@@ -121,35 +121,35 @@ async def add_glass_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить стёкла"""
     context.user_data["admin_state"] = "add_glass"
     context.user_data["add_category"] = "glass"
-    await _send_add_models_message(update, "🔍 Добавить стёкла")
+    await _send_simple_add_prompt(update, "🔍 Стёкла")
 
 async def add_chelts_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить чехлы"""
     context.user_data["admin_state"] = "add_case"
     context.user_data["add_category"] = "case"
-    await _send_add_models_message(update, "📱 Добавить чехлы")
+    await _send_simple_add_prompt(update, "📱 Чехлы")
 
 async def add_display_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить дисплеи"""
     context.user_data["admin_state"] = "add_display"
     context.user_data["add_category"] = "display"
-    await _send_add_models_message(update, "🖥️ Добавить дисплеи")
+    await _send_simple_add_prompt(update, "🖥️ Дисплеи")
 
 async def add_battery_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить АКБ"""
     context.user_data["admin_state"] = "add_battery"
     context.user_data["add_category"] = "battery"
-    await _send_add_models_message(update, "🔋 Добавить АКБ")
+    await _send_simple_add_prompt(update, "🔋 АКБ")
 
 async def add_oca_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить переклейку"""
     context.user_data["admin_state"] = "add_oca"
     context.user_data["add_category"] = "oca"
-    await _send_add_models_message(update, "🧴 Добавить переклейку")
+    await _send_simple_add_prompt(update, "🧴 Переклейка")
 
 
-async def _send_add_models_message(update: Update, title: str):
-    """Отправить сообщение с инструкцией по добавлению моделей"""
+async def _send_simple_add_prompt(update: Update, category_name: str):
+    """Отправить упрощённое сообщение для добавления моделей"""
     kb = [
         [KeyboardButton(text="🔍 Добавить стёкла")],
         [KeyboardButton(text="📱 Добавить чехлы")],
@@ -159,10 +159,10 @@ async def _send_add_models_message(update: Update, title: str):
         [KeyboardButton(text="⬅️ Назад")],
     ]
     await update.message.reply_text(
-        f"{title}\n\n"
-        f"Формат: `название_группы: модель1, модель2`\n\n"
-        f"Пример: `samsung_a55_group: Samsung A55, Samsung A55 5G`\n\n"
-        f"Или просто: `iPhone 16, iPhone 16 Pro, iPhone 16 Pro Max`\n\n"
+        f"{category_name}\n\n"
+        f"✍️ **Просто перечисли модели через запятую:**\n"
+        f"например: `iPhone 16, iPhone 16 Pro, iPhone 16 Pro Max`\n\n"
+        f"⚡ Бот сам создаст группу и уберёт дубли.\n\n"
         f"⬅️ Назад — вернуться",
         reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True),
         parse_mode="Markdown"
@@ -263,16 +263,10 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("🏠 Главное меню", reply_markup=get_keyboard_by_role(role))
         return
 
-    if state == "add_glass":
-        _handle_add_model(update, context, "glass")
-    elif state == "add_case":
-        _handle_add_model(update, context, "case")
-    elif state == "add_display":
-        _handle_add_model(update, context, "display")
-    elif state == "add_battery":
-        _handle_add_model(update, context, "battery")
-    elif state == "add_oca":
-        _handle_add_model(update, context, "oca")
+    if state and state.startswith("add_") and state not in ("add_models", "admin_panel", "helpers_menu", "helper_add", "helper_remove"):
+        # Обрабатываем ввод моделей
+        _handle_add_model_smart(update, context, state.replace("add_", ""))
+        return
     elif state == "helper_add":
         try:
             helper_id = int(user_input)
@@ -340,30 +334,36 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data["admin_state"] = "admin_panel"
 
 
-def _handle_add_model(update, context, category):
-    """Обработка добавления моделей в категорию"""
+def _handle_add_model_smart(update, context, category):
+    """Умная обработка добавления моделей через запятую"""
     user_input = update.message.text.strip()
-    if ":" in user_input:
-        group_name, models_str = user_input.split(":", 1)
-        models = [m.strip() for m in models_str.split(",")]
-    else:
-        models = [m.strip() for m in user_input.split(",")]
-        data = load_category(category)
-        group_name = f"{category}_{len(data) + 1}_group"
+    result = add_models_smart(category, user_input)
 
-    add_models_to_category(category, group_name, models)
-    update.message.reply_text(
-        f"✅ Добавлено **{len(models)}** моделей в группу `{group_name}`",
-        reply_markup=ReplyKeyboardMarkup(keyboard=[
-            [KeyboardButton(text="🔍 Добавить стёкла")],
-            [KeyboardButton(text="📱 Добавить чехлы")],
-            [KeyboardButton(text="🖥️ Добавить дисплеи")],
-            [KeyboardButton(text="🔋 Добавить АКБ")],
-            [KeyboardButton(text="🧴 Добавить переклейку")],
-            [KeyboardButton(text="⬅️ Назад")],
-        ], resize_keyboard=True),
-        parse_mode="Markdown"
-    )
+    kb = [
+        [KeyboardButton(text="🔍 Добавить стёкла")],
+        [KeyboardButton(text="📱 Добавить чехлы")],
+        [KeyboardButton(text="🖥️ Добавить дисплеи")],
+        [KeyboardButton(text="🔋 Добавить АКБ")],
+        [KeyboardButton(text="🧴 Добавить переклейку")],
+        [KeyboardButton(text="⬅️ Назад")],
+    ]
+
+    if result.get("error"):
+        update.message.reply_text(result["error"], reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    elif result.get("msg"):
+        update.message.reply_text(f"ℹ️ {result['msg']}", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    else:
+        text = (
+            f"✅ **Успешно добавлено!**\n\n"
+            f"📦 Категория: `{category}`\n"
+            f"📂 Группа: `{result['group']}`\n"
+            f"➕ Добавлено: **{result['added']}**\n"
+            f"⏭️ Пропущено дублей: **{result['skipped']}**\n\n"
+            f"📝 Модели:\n" + "\n".join([f"• {m}" for m in result["models"][:10]])
+        )
+        if len(result["models"]) > 10:
+            text += f"\n... и ещё {len(result['models']) - 10}"
+        update.message.reply_text(text, reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
     context.user_data["admin_state"] = "add_models"
 
 

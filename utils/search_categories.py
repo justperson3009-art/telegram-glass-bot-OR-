@@ -5,6 +5,7 @@
 import json
 import os
 import re
+from datetime import datetime
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 
@@ -211,3 +212,63 @@ def find_compatible_models_in_category(category, user_input):
         return best_match
 
     return {"found": False}
+
+
+# === УМНОЕ ДОБАВЛЕНИЕ (БЕЗ ДУБЛЕЙ И КОНФЛИКТОВ) ===
+
+def normalize_model_name(name):
+    """Нормализует название: убирает лишние пробелы, приводит к нижнему регистру"""
+    return " ".join(name.strip().lower().split())
+
+
+def save_category(category, data):
+    """Атомарное сохранение (предотвращает битые JSON файлы)"""
+    filepath = get_category_file(category)
+    tmp_path = filepath + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, filepath)  # Атомарная замена на POSIX/Windows
+
+
+def add_models_smart(category, raw_models_str):
+    """
+    Умное добавление моделей:
+    1. Чистит и нормализует ввод
+    2. Убирает дубли внутри ввода
+    3. Проверяет глобальные дубли во всех категориях
+    4. Создаёт уникальную группу
+    5. Атомарно сохраняет
+    """
+    # 1. Парсим и чистим
+    models = [normalize_model_name(m) for m in raw_models_str.split(",") if m.strip()]
+    # Убираем дубли внутри ввода (сохраняем порядок)
+    unique_input = list(dict.fromkeys(models))
+
+    if not unique_input:
+        return {"added": 0, "skipped": 0, "group": None, "error": "❌ Пустой список"}
+
+    # 2. Проверяем глобальные дубли (во всех категориях)
+    all_data = load_all_categories()
+    existing_global = {normalize_model_name(m) for group in all_data.values() for m in group}
+
+    new_models = []
+    skipped = 0
+    for m in unique_input:
+        if m in existing_global:
+            skipped += 1
+        else:
+            new_models.append(m)
+
+    if not new_models:
+        return {"added": 0, "skipped": len(unique_input), "group": None, "msg": "Все модели уже есть в базе"}
+
+    # 3. Создаём уникальную группу (timestamp предотвращает конфликты имён)
+    cat_data = load_category(category)
+    timestamp = int(datetime.now().timestamp())
+    group_name = f"auto_{category}_{len(cat_data) + 1}_{timestamp}"
+
+    # 4. Сохраняем атомарно
+    cat_data[group_name] = new_models
+    save_category(category, cat_data)
+
+    return {"added": len(new_models), "skipped": skipped, "group": group_name, "models": new_models}
