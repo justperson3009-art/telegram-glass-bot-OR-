@@ -95,7 +95,6 @@
   "samsung_a14_a15_group": [
     "Samsung Galaxy A14",
     "Samsung Galaxy A14 5G",
-    "Samsung Galaxy A15",
     "Samsung Galaxy A15 5G"
   ],
   "samsung_a05_a06_group": [
@@ -173,10 +172,6 @@
     "Huawei Nova 10",
     "Huawei Nova 7 SE"
   ],
-  "samsung_a32_group": [
-    "Samsung Galaxy A32 4G",
-    "Samsung Galaxy A32 5G"
-  ],
   "xiaomi_poco_m4_group": [
     "POCO M4",
     "POCO M4 Pro"
@@ -186,7 +181,6 @@
     "POCO M5s"
   ],
   "xiaomi_poco_x3_group": [
-    "POCO X3",
     "POCO X3 Pro"
   ],
   "xiaomi_poco_x4_group": [
@@ -484,7 +478,6 @@
   "realme_7_series_group": [
     "Realme 7",
     "Realme 7 Pro",
-    "Realme 7i",
     "Realme 7 5G"
   ],
   "realme_8_series_group": [
@@ -553,12 +546,10 @@
     "Realme C15 Qualcomm Edition"
   ],
   "realme_c21_series_group": [
-    "Realme C21",
     "Realme C21Y",
     "Realme C21i"
   ],
   "realme_c25_series_group": [
-    "Realme C25",
     "Realme C25s",
     "Realme C25Y"
   ],
@@ -566,8 +557,7 @@
     "Realme C30",
     "Realme C30s",
     "Realme C31",
-    "Realme C33",
-    "Realme C35"
+    "Realme C33"
   ],
   "realme_c40_series_group": [
     "Realme C40",
@@ -581,19 +571,15 @@
     "Realme C65"
   ],
   "realme_narzo_60_pro_group": [
-    "Realme Narzo 60 Pro 5G",
     "Realme Narzo 60 Pro"
   ],
   "realme_narzo_50_pro_group": [
-    "Realme Narzo 50 Pro 5G",
     "Realme Narzo 50 Pro"
   ],
   "realme_12_pro_plus_group": [
-    "Realme 12 Pro+",
     "Realme 12 Pro+ 5G"
   ],
   "realme_12_pro_group": [
-    "Realme 12 Pro",
     "Realme 12 Pro 5G"
   ],
   "iqoo_neo_group": [
@@ -657,9 +643,7 @@
     "Vivo Y35+ 5G"
   ],
   "vivo_y35_group": [
-    "Vivo Y35",
     "Vivo Y35 2022",
-    "Vivo Y33s",
     "Vivo Y33t"
   ],
   "vivo_y22_group": [
@@ -798,12 +782,10 @@
     "Honor 8X Max"
   ],
   "honor_9x_group": [
-    "Honor 9X",
     "Honor 9X Pro"
   ],
   "honor_10_group": [
-    "Honor 10",
-    "Honor 10 Lite"
+    "Honor 10"
   ],
   "honor_20_group": [
     "Honor 20",
@@ -909,11 +891,9 @@
   "huawei_nova7_group": [
     "Huawei Nova 7",
     "Huawei Nova 7i",
-    "Huawei Nova 7 5G",
-    "Huawei Nova 7 SE"
+    "Huawei Nova 7 5G"
   ],
   "huawei_nova8_group": [
-    "Huawei Nova 8",
     "Huawei Nova 8i",
     "Huawei Nova 8 SE",
     "Huawei Nova 8 Pro"
@@ -924,7 +904,6 @@
     "Huawei Nova 9 Pro"
   ],
   "huawei_nova10_group": [
-    "Huawei Nova 10",
     "Huawei Nova 10 SE",
     "Huawei Nova 10 Pro"
   ],
@@ -1081,7 +1060,6 @@
     "Moto G8 Play"
   ],
   "motorola_g9_group": [
-    "Moto G9",
     "Moto G9 Plus",
     "Moto G9 Play",
     "Moto G9 Power"
@@ -1363,16 +1341,13 @@
   "poco_f_series_group": [
     "POCO F1",
     "POCO F2 Pro",
-    "POCO F3",
     "POCO F3 GT",
     "POCO F4"
   ],
   "poco_x_series_group": [
     "POCO X1",
     "POCO X2",
-    "POCO X3",
-    "POCO X3 NFC",
-    "POCO X3 Pro"
+    "POCO X3 NFC"
   ],
   "poco_m_series_group": [
     "POCO M1",
@@ -1387,16 +1362,13 @@
     "POCO C40"
   ],
   "xiaomi_mi2_group": [
-    "Xiaomi Mi 2",
     "Xiaomi Mi 2S"
   ],
   "xiaomi_mi4_group": [
-    "Xiaomi Mi 4",
     "Xiaomi Mi 4c",
     "Xiaomi Mi 4i"
   ],
   "xiaomi_mi5_group": [
-    "Xiaomi Mi 5",
     "Xiaomi Mi 5s",
     "Xiaomi Mi 5s Plus"
   ],
@@ -1443,21 +1415,12 @@
     "Redmi A3"
   ],
   "redmi_note_group": [
-    "Redmi Note 3",
-    "Redmi Note 3 Pro",
-    "Redmi Note 4",
-    "Redmi Note 4X",
-    "Redmi Note 5"
+    "Redmi Note 4X"
   ],
   "redmi_y_series_group": [
-    "Redmi Y1",
-    "Redmi Y1 Lite",
-    "Redmi Y2",
     "Redmi Y3"
   ],
   "poco_c_group": [
-    "POCO C3",
-    "POCO C40",
     "POCO C50",
     "POCO C51",
     "POCO C55"

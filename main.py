@@ -115,16 +115,29 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await handle_feedback(update, context)
         return
 
-    # 5. Проверяем админ-состояние (ввод данных)
-    admin_state = context.user_data.get("admin_state")
-    if admin_state and admin_state not in ("admin_panel", "add_models", "helpers_menu"):
-        await admin_handler.handle_admin_input(update, context)
-        return
-
-    # 6. Проверяем заблокирован ли
+    # 5. Проверяем заблокирован ли
     db_user = get_user(user_id)
     if db_user and db_user.get("is_blocked"):
         await update.message.reply_text("⛔ Бот заблокировал вам доступ.")
+        return
+
+    # === КНОПКИ КАТЕГОРИЙ (ПЕРЕД АДМИНКОЙ, чтобы работали всегда) ===
+    if user_input in ("🔍 Подбор стёкол", "📱 Чехлы", "🖥️ Дисплеи", "🔋 АКБ", "🧴 Переклейка"):
+        # Сбрасываем admin_state чтобы не мешал
+        context.user_data.pop("admin_state", None)
+        await category_button_handler(update, context)
+        return
+
+    # === СТАТУС (тоже всегда работает) ===
+    if user_input == "👤 Мой статус":
+        context.user_data.pop("admin_state", None)
+        await status_button_handler(update, context)
+        return
+
+    # 6. Проверяем админ-состояние (ввод данных)
+    admin_state = context.user_data.get("admin_state")
+    if admin_state and admin_state not in ("admin_panel", "add_models", "helpers_menu"):
+        await admin_handler.handle_admin_input(update, context)
         return
 
     # === КНОПКИ АДМИНИСТРАТОРА ===
@@ -213,16 +226,6 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         if role in ("admin", "helper"):
             context.user_data["admin_state"] = "add_models"
             await admin_handler.show_add_models(update, context)
-        return
-
-    # === КАТЕГОРИИ ===
-    if user_input in ("🔍 Подбор стёкол", "📱 Чехлы", "🖥️ Дисплеи", "🔋 АКБ", "🧴 Переклейка"):
-        await category_button_handler(update, context)
-        return
-
-    # === СТАТУС ===
-    if user_input == "👤 Мой статус":
-        await status_button_handler(update, context)
         return
 
     # === ОБЫЧНЫЙ ПОИСК ===

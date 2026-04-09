@@ -30,7 +30,13 @@ def load_category(category):
     if not os.path.exists(filepath):
         return {}
     with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    
+    # Для дисплеев и АКБ новый формат с поисковым индексом
+    if category in ("display", "battery") and isinstance(data, dict) and "compatibility" in data:
+        return data  # Возвращаем как есть {compatibility: {...}, search_index: {...}}
+    
+    return data
 
 
 def save_category(category, data):
@@ -152,68 +158,6 @@ def _translate_keyword(keyword):
     return translations.get(keyword, keyword)
 
 
-def find_compatible_models_in_category(category, user_input):
-    """Поиск моделей в конкретной категории"""
-    data = load_category(category)
-    user_normalized = normalize_text(user_input)
-
-    # Шаг 1: Точное совпадение
-    for group in data.values():
-        for model in group:
-            if user_normalized in model.lower():
-                return {
-                    "found": True,
-                    "models": group,
-                    "exact_match": True,
-                    "matched_model": model,
-                    "confidence": 1.0
-                }
-
-    # Шаг 2: Ключевые слова
-    keywords = user_normalized.split()
-    if len(keywords) >= 2:
-        for group in data.values():
-            for model in group:
-                model_lower = model.lower()
-                matches = sum(1 for kw in keywords if kw in model_lower or _translate_keyword(kw) in model_lower)
-                if matches == len(keywords):
-                    return {
-                        "found": True,
-                        "models": group,
-                        "exact_match": True,
-                        "matched_model": model,
-                        "confidence": 0.95,
-                        "keyword_match": True
-                    }
-
-    # Шаг 3: Нечёткое совпадение
-    best_match = None
-    best_score = 0
-
-    for group in data.values():
-        for model in group:
-            model_normalized = normalize_text(model)
-            distance = levenshtein_distance(user_normalized, model_normalized)
-            max_len = max(len(user_normalized), len(model_normalized))
-            if max_len == 0:
-                continue
-            similarity = 1 - (distance / max_len)
-            if similarity > 0.7 and similarity > best_score:
-                best_score = similarity
-                best_match = {
-                    "found": True,
-                    "models": group,
-                    "exact_match": False,
-                    "matched_model": model,
-                    "confidence": similarity
-                }
-
-    if best_match:
-        return best_match
-
-    return {"found": False}
-
-
 # === АЛИАСЫ ДЛЯ ОБЛЕГЧЁННОГО ПОИСКА ===
 
 def generate_model_aliases(model_name):
@@ -271,6 +215,59 @@ def find_compatible_models_in_category(category, user_input):
     data = load_category(category)
     user_normalized = normalize_text(user_input)
 
+    # Для дисплеев и АКБ используем поисковый индекс
+    if category in ("display", "battery") and isinstance(data, dict) and "search_index" in data:
+        compatibility = data.get("compatibility", {})
+        search_index = data.get("search_index", {})
+        
+        # Шаг 1: Точное совпадение в индексе
+        if user_normalized in search_index:
+            group_name = search_index[user_normalized]
+            if group_name in compatibility:
+                return {
+                    "found": True,
+                    "models": compatibility[group_name],
+                    "exact_match": True,
+                    "matched_model": compatibility[group_name][0],
+                    "confidence": 1.0
+                }
+        
+        # Шаг 2: Поиск по части запроса в индексе (с приоритетом на точное совпадение)
+        best_match = None
+        best_score = 0
+        
+        for alias, group_name in search_index.items():
+            if user_normalized in alias or alias in user_normalized:
+                if group_name in compatibility:
+                    # Рассчитываем score: чем длиннее совпадение, тем лучше
+                    score = len(user_normalized) / len(alias) if len(alias) > 0 else 0
+                    # Бонус за точное совпадение начала
+                    if alias.startswith(user_normalized):
+                        score += 0.5
+                    
+                    if score > best_score:
+                        best_score = score
+                        best_match = {
+                            "found": True,
+                            "models": compatibility[group_name],
+                            "exact_match": True,
+                            "matched_model": compatibility[group_name][0],
+                            "confidence": 0.95,
+                            "index_match": True
+                        }
+        
+        if best_match:
+            return best_match
+        
+        # Если не нашли в индексе - используем обычный поиск
+        return _find_in_compatibility_data(compatibility, user_input, user_normalized)
+
+    # Для остальных категорий - обычный поиск
+    return _find_in_compatibility_data(data, user_input, user_normalized)
+
+
+def _find_in_compatibility_data(data, user_input, user_normalized):
+    """Обычный поиск в данных совместимости"""
     # Шаг 1: Точное совпадение (оригинал)
     for group in data.values():
         for model in group:
@@ -284,7 +281,7 @@ def find_compatible_models_in_category(category, user_input):
                 }
 
     # Шаг 2: Поиск по алиасам
-    index = build_search_index(category)
+    index = build_search_index_for_data(data)
     if user_normalized in index:
         matched_model = index[user_normalized][0]
         # Находим группу с этой моделью
@@ -299,8 +296,36 @@ def find_compatible_models_in_category(category, user_input):
                     "alias_match": True
                 }
 
-    # Шаг 3: Ключевые слова (частичное совпадение по 2+ словам)
+    # Шаг 3: Умное совпадение по ключевым словам + номер модели
     keywords = user_normalized.split()
+    
+    # Если запрос содержит номер модели (например "redmi 10")
+    number_match = re.search(r'\b(\d+[A-Za-z]?)\b', user_normalized)
+    if number_match and len(keywords) >= 1:
+        model_number = number_match.group(1)
+        # Ищем модели где есть бренд И точный номер
+        for group in data.values():
+            for model in group:
+                model_lower = model.lower()
+                # Проверяем что номер модели есть в названии
+                if model_number in model_lower:
+                    # И бренд тоже совпадает
+                    brand_match = any(
+                        _translate_keyword(kw) in model_lower or kw in model_lower 
+                        for kw in keywords 
+                        if kw != model_number
+                    )
+                    if brand_match or len(keywords) == 1:
+                        return {
+                            "found": True,
+                            "models": group,
+                            "exact_match": True,
+                            "matched_model": model,
+                            "confidence": 0.92,
+                            "number_match": True
+                        }
+
+    # Шаг 4: Ключевые слова (частичное совпадение по 2+ словам)
     if len(keywords) >= 2:
         for group in data.values():
             for model in group:
@@ -316,7 +341,7 @@ def find_compatible_models_in_category(category, user_input):
                         "keyword_match": True
                     }
 
-    # Шаг 4: Нечёткое совпадение (Levenshtein)
+    # Шаг 5: Нечёткое совпадение (Levenshtein) - СНИЖАЕМ порог до 0.75
     best_match = None
     best_score = 0
 
@@ -328,7 +353,8 @@ def find_compatible_models_in_category(category, user_input):
             if max_len == 0:
                 continue
             similarity = 1 - (distance / max_len)
-            if similarity > 0.7 and similarity > best_score:
+            # ПОВЫСИЛИ порог с 0.7 до 0.75 чтобы избежать ложных совпадений
+            if similarity > 0.75 and similarity > best_score:
                 best_score = similarity
                 best_match = {
                     "found": True,
@@ -342,6 +368,19 @@ def find_compatible_models_in_category(category, user_input):
         return best_match
 
     return {"found": False}
+
+
+def build_search_index_for_data(data):
+    """Строит поисковый индекс для произвольных данных"""
+    index = {}
+    for group_name, models in data.items():
+        for model in models:
+            aliases = generate_model_aliases(model)
+            for alias in aliases:
+                if alias not in index:
+                    index[alias] = []
+                index[alias].append(model)
+    return index
 
 def normalize_model_name(name):
     """Нормализует название: убирает лишние пробелы, приводит к нижнему регистру"""

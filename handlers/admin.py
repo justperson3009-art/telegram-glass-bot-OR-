@@ -273,7 +273,19 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             text = "👑 **Панель администратора**\n\nВыберите действие:"
             await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
         elif state and state.startswith("helper_"):
+            # Из помощников → в меню помощников
+            context.user_data["admin_state"] = "helpers_menu"
             await show_helpers(update, context)
+        elif state and state == WAITING_BROADCAST_TEXT:
+            # Из рассылки → в админ-панель
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
+        elif state and state == WAITING_BLOCK_USER_ID:
+            # Из блокировки → в админ-панель
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
         else:
             await go_back_to_admin(update, context)
         return
@@ -295,6 +307,7 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             helper_id = int(user_input)
             set_user_role(helper_id, "helper")
             await update.message.reply_text(f"✅ Пользователь `{helper_id}` назначен помощником!", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
+            context.user_data["admin_state"] = "helpers_menu"  # Сбрасываем состояние в меню помощников
         except ValueError:
             await update.message.reply_text("❌ Введите корректный ID (число).")
     elif state == "helper_remove":
@@ -302,6 +315,7 @@ async def handle_admin_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
             helper_id = int(user_input)
             set_user_role(helper_id, "user")
             await update.message.reply_text(f"✅ Пользователь `{helper_id}` снят с роли помощника.", reply_markup=get_helpers_keyboard(), parse_mode="Markdown")
+            context.user_data["admin_state"] = "helpers_menu"  # Сбрасываем состояние в меню помощников
         except ValueError:
             await update.message.reply_text("❌ Введите корректный ID (число).")
     elif state == WAITING_BROADCAST_TEXT:

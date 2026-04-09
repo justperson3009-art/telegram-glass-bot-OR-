@@ -43,6 +43,11 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                           matched_model=result["matched_model"])
 
         text += "\n\n"
+        
+        # Для дисплеев и АКБ добавляем пометку про ориентировочную цену
+        if category in ("display", "battery"):
+            text += "💰 **Цена ориентировочная**\n\n"
+        
         for model in result["models"]:
             text += f"• {model}\n"
 
