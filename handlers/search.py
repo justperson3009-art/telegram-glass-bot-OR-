@@ -20,6 +20,9 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Определяем категорию
     category = context.user_data.get("category", "glass")
+    
+    # Логируем категорию для отладки
+    print(f"[DEBUG] Поиск в категории: {category}, запрос: {user_input}")
 
     # Ищем в выбранной категории
     result = find_compatible_models_in_category(category, user_input)
@@ -38,18 +41,28 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Нашли!
         # Формируем заголовок в зависимости от категории
         category_names = {
-            "glass": "Стекло",
-            "display": "Дисплей",
-            "battery": "Аккумулятор",
-            "case": "Чехол",
-            "oca": "Стекло для переклейки"
+            "glass": "🔍 Стекло",
+            "display": "🖥️ Дисплей",
+            "battery": "🔋 Аккумулятор",
+            "case": "📱 Чехол",
+            "oca": "🧴 Стекло для переклейки"
         }
-        category_name = category_names.get(category, "Стекло")
+        category_name = category_names.get(category, "🔍 Стекло")
+        
+        # Показываем текущую категорию явно
+        category_hints = {
+            "glass": "📂 Ищем в: Стёкла",
+            "display": "📂 Ищем в: Дисплеи",
+            "battery": "📂 Ищем в: АКБ",
+            "case": "📂 Ищем в: Чехлы",
+            "oca": "📂 Ищем в: Переклейка"
+        }
+        category_hint = category_hints.get(category, "")
 
         if result.get("exact_match"):
-            text = f"🔎 **{category_name} от {user_input} подходит для всех этих моделей:**"
+            text = f"🔎 **{category_name} от {user_input} подходит для всех этих моделей:**\n\n{category_hint}"
         else:
-            text = f"🔍 **Возможно вы имели в виду {result['matched_model']}?** {category_name} подходит для:"
+            text = f"🔍 **Возможно вы имели в виду {result['matched_model']}?** {category_name} подходит для:\n\n{category_hint}"
 
         text += "\n\n"
 

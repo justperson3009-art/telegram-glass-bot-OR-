@@ -34,6 +34,9 @@ logs/
 # Бэкапы
 backups/
 
+# PID файл
+bot.pid
+
 # IDE
 .vscode/
 .idea/

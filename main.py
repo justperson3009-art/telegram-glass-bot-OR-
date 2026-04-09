@@ -1,6 +1,9 @@
 """
 Главный файл бота — сборка всех модулей
 """
+import os
+import sys
+import signal
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from telegram.request import HTTPXRequest
@@ -22,6 +25,55 @@ from keyboards import (
 )
 from utils.logger import logger, log_error
 from utils.backup import backup_compatibility_json, backup_database
+
+PID_FILE = "bot.pid"
+
+
+def check_single_instance():
+    """Проверяет, запущен ли уже другой экземпляр бота"""
+    if os.path.exists(PID_FILE):
+        try:
+            with open(PID_FILE, 'r') as f:
+                old_pid = int(f.read().strip())
+            # Проверяем, существует ли процесс с этим PID
+            if sys.platform == 'win32':
+                import ctypes
+                PROCESS_QUERY_INFORMATION = 0x0400
+                PROCESS_VM_READ = 0x0010
+                try:
+                    handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, old_pid)
+                    if handle:
+                        ctypes.windll.kernel32.CloseHandle(handle)
+                        print(f"⚠️ Бот уже запущен с PID {old_pid}")
+                        print("Если вы уверены, что бот не запущен, удалите файл bot.pid")
+                        sys.exit(1)
+                except:
+                    # Процесс не существует, удаляем старый PID файл
+                    os.remove(PID_FILE)
+                    logger.info(f"Удалён старый PID файл (процесс {old_pid} не существует)")
+            else:
+                os.kill(old_pid, 0)  # Проверяем, существует ли процесс
+                print(f"⚠️ Бот уже запущен с PID {old_pid}")
+                print("Если вы уверены, что бот не запущен, удалите файл bot.pid")
+                sys.exit(1)
+        except (ValueError, FileNotFoundError, ProcessLookupError):
+            # PID файл повреждён или процесс не существует
+            if os.path.exists(PID_FILE):
+                os.remove(PID_FILE)
+                logger.info("Удалён некорректный PID файл")
+
+    # Записываем текущий PID
+    with open(PID_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+    logger.info(f"Записан PID: {os.getpid()}")
+
+
+def cleanup_pid_file(signum=None, frame=None):
+    """Удаляет PID файл при завершении работы"""
+    if os.path.exists(PID_FILE):
+        os.remove(PID_FILE)
+        logger.info("PID файл удалён при завершении работы")
+    sys.exit(0)
 
 
 def create_app():
@@ -250,6 +302,13 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    # Проверяем, запущен ли уже другой экземпляр бота
+    check_single_instance()
+    
+    # Регистрируем обработчики сигналов для корректного завершения
+    signal.signal(signal.SIGINT, cleanup_pid_file)
+    signal.signal(signal.SIGTERM, cleanup_pid_file)
+    
     try:
         backup_compatibility_json()
         backup_database()
@@ -260,7 +319,10 @@ def main():
     app = create_app()
     logger.info("🤖 Бот запущен...")
     print("🤖 Бот запущен...")
-    app.run_polling(drop_pending_updates=True, poll_interval=1.0)
+    try:
+        app.run_polling(drop_pending_updates=True, poll_interval=1.0)
+    finally:
+        cleanup_pid_file()
 
 
 if __name__ == "__main__":
