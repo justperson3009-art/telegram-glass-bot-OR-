@@ -215,15 +215,18 @@ def find_compatible_models_in_category(category, user_input):
     data = load_category(category)
     user_normalized = normalize_text(user_input)
 
-    # === СПЕЦИАЛЬНЫЙ ПОИСК ДЛЯ АКБ ПО МАРКИРОВКЕ ===
+    # === СПЕЦИАЛЬНЫЙ ПОИСК ДЛЯ АКБ (по маркировке ИЛИ модели телефона) ===
     if category == "battery":
-        # Ищем по маркировке аккумулятора (BN56, BM41 и т.д.)
-        battery_mark_result = _find_battery_by_mark(data, user_input)
+        # Для battery data = {compatibility: {...}, search_index: {...}}
+        compatibility_data = data.get("compatibility", {}) if isinstance(data, dict) and "compatibility" in data else data
+        battery_mark_result = _find_battery_by_mark(compatibility_data, user_input)
         if battery_mark_result["found"]:
             return battery_mark_result
+        # Если не нашли через специальный поиск - идём дальше через обычный поиск
+        return _find_in_compatibility_data(compatibility_data, user_input, user_normalized)
 
-    # Для дисплеев и АКБ используем поисковый индекс
-    if category in ("display", "battery") and isinstance(data, dict) and "search_index" in data:
+    # Для дисплеев используем поисковый индекс
+    if category == "display" and isinstance(data, dict) and "search_index" in data:
         compatibility = data.get("compatibility", {})
         search_index = data.get("search_index", {})
         
@@ -447,23 +450,23 @@ def add_models_smart(category, raw_models_str):
     return {"added": len(new_models), "skipped": skipped, "group": group_name, "models": new_models}
 
 
-# === ПОИСК АКБ ПО МАРКИРОВКЕ ===
+# === ПОИСК АКБ ПО МАРКИРОВКЕ ИЛИ МОДЕЛИ ТЕЛЕФОНА ===
 
 def _find_battery_by_mark(data, user_input):
     """
-    Ищем АКБ по маркировке (BN56, BM41 и т.д.)
+    Ищем АКБ:
+    1. По маркировке (BN56, BM41 и т.д.)
+    2. По модели телефона (Redmi 9A, Samsung A55 и т.д.)
     Формат записи: "Аккумулятор Redmi 9A/9C (BN56) — 20 BYN"
     """
     user_normalized = normalize_text(user_input)
     
-    # Проверяем все записи в базе
+    # === ШАГ 1: Поиск по маркировке (BN56) ===
     for group_name, models in data.items():
         for model in models:
-            # Ищем маркировку в скобках
             mark_match = re.search(r'\(([^)]+)\)', model)
             if mark_match:
                 battery_mark = mark_match.group(1).lower().strip()
-                # Сравниваем с запросом пользователя
                 if user_normalized == battery_mark or user_normalized in battery_mark or battery_mark in user_normalized:
                     return {
                         "found": True,
@@ -472,6 +475,34 @@ def _find_battery_by_mark(data, user_input):
                         "matched_model": model,
                         "confidence": 1.0,
                         "mark_match": True
+                    }
+    
+    # === ШАГ 2: Поиск по модели телефона ===
+    # Извлекаем названия телефонов из записей
+    for group_name, models in data.items():
+        for model in models:
+            # Убираем "Аккумулятор " и маркировку в скобках
+            phone_part = model.replace("Аккумулятор ", "").strip()
+            mark_match = re.search(r'\(([^)]+)\)', phone_part)
+            if mark_match:
+                phone_part = phone_part.replace(f"({mark_match.group(1)})", "").strip()
+            # Убираем цену
+            if " — " in phone_part:
+                phone_part = phone_part.rsplit(" — ", 1)[0].strip()
+            
+            # Разбиваем по слэшу - получаем отдельные модели
+            phone_models = [m.strip().lower() for m in phone_part.split("/") if m.strip()]
+            
+            # Проверяем точное совпадение
+            for pm in phone_models:
+                if user_normalized == pm or user_normalized in pm or pm in user_normalized:
+                    return {
+                        "found": True,
+                        "models": models,
+                        "exact_match": True,
+                        "matched_model": model,
+                        "confidence": 0.98,
+                        "phone_match": True
                     }
     
     return {"found": False}
