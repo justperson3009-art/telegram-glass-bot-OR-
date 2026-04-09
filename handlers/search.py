@@ -48,48 +48,78 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "oca": "🧴 Стекло для переклейки"
         }
         category_name = category_names.get(category, "🔍 Стекло")
-        
-        # Показываем текущую категорию явно
-        category_hints = {
-            "glass": "📂 Ищем в: Стёкла",
-            "display": "📂 Ищем в: Дисплеи",
-            "battery": "📂 Ищем в: АКБ",
-            "case": "📂 Ищем в: Чехлы",
-            "oca": "📂 Ищем в: Переклейка"
-        }
-        category_hint = category_hints.get(category, "")
 
-        if result.get("exact_match"):
-            text = f"🔎 **{category_name} от {user_input} подходит для всех этих моделей:**\n\n{category_hint}"
-        else:
-            text = f"🔍 **Возможно вы имели в виду {result['matched_model']}?** {category_name} подходит для:\n\n{category_hint}"
-
-        text += "\n\n"
-
-        for model in result["models"]:
-            # Убираем дублирование "(цена ориентировочная)" если оно есть в названии
-            clean_model = model.replace(" (цена ориентировочная)", "").strip()
-            text += f"• {clean_model}\n"
-
-        # Для дисплеев и АКБ добавляем пометку про ориентировочную цену ВНИЗУ (один раз)
+        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ И АКБ (цена + совместимость) ===
         if category in ("display", "battery"):
+            # Берём первый найденный результат - это искомая модель с ценой
+            first_model = result["models"][0]
+            # Извлекаем название и цену из формата "Xiaomi Redmi 9A/9C/10A — 27 BYN"
+            if " — " in first_model:
+                model_name, price = first_model.rsplit(" — ", 1)
+                text = f"**{category_name}**\n\n📱 {model_name} — {price}"
+            else:
+                # Если формат без цены
+                text = f"**{category_name}**\n\n📱 {first_model}"
+
+            # Добавляем совместимые модели (все кроме первого - это искомая)
+            compatible_models = result["models"][1:] if len(result["models"]) > 1 else result["models"]
+            
+            # Фильтруем - убираем дубликаты и саму искомую модель
+            seen_models = set()
+            unique_compatible = []
+            for m in result["models"]:
+                # Извлекаем только название без цены
+                if " — " in m:
+                    clean_name = m.rsplit(" — ", 1)[0].strip()
+                else:
+                    clean_name = m.strip()
+                
+                if clean_name not in seen_models:
+                    seen_models.add(clean_name)
+                    unique_compatible.append(m)
+
+            if unique_compatible:
+                text += "\n\n✅ **Совместимость:**"
+                for model in unique_compatible:
+                    # Убираем цену для списка совместимости
+                    if " — " in model:
+                        clean_model = model.rsplit(" — ", 1)[0].strip()
+                    else:
+                        clean_model = model.strip()
+                    text += f"\n• {clean_model}"
+
+            # Пометка про ориентировочную цену
             text += "\n\n💰 **Цена ориентировочная**"
 
-        # Получаем рейтинг совместимости
-        compat = get_model_compatibility(result["matched_model"])
-        if compat["percent"] is not None:
-            if compat["status"] == "confirmed":
-                emoji = "✅"
-                label = "Подтверждено"
-            elif compat["status"] == "partial":
-                emoji = "⚠️"
-                label = "Совместимо"
+        # === ФОРМАТ ДЛЯ СТЁКОЛ, ЧЕХЛОВ, ОКА ===
+        else:
+            if result.get("exact_match"):
+                text = f"🔎 **{category_name} от {user_input} подходит для всех этих моделей:**"
             else:
-                emoji = "❌"
-                label = "Не подтверждено"
+                text = f"🔍 **Возможно вы имели в виду {result['matched_model']}?** {category_name} подходит для:"
 
-            text += f"\n\n{emoji} **Совместимость: {compat['percent']}%** ({label})\n"
-            text += f"👍 Подошло: {compat['positive']} | 👎 Не подошло: {compat['negative']}"
+            text += "\n\n"
+
+            for model in result["models"]:
+                clean_model = model.replace(" (цена ориентировочная)", "").strip()
+                text += f"• {clean_model}\n"
+
+        # Получаем рейтинг совместимости (ТОЛЬКО для стёкол/чехлов/ОКА)
+        if category not in ("display", "battery"):
+            compat = get_model_compatibility(result["matched_model"])
+            if compat["percent"] is not None:
+                if compat["status"] == "confirmed":
+                    emoji = "✅"
+                    label = "Подтверждено"
+                elif compat["status"] == "partial":
+                    emoji = "⚠️"
+                    label = "Совместимо"
+                else:
+                    emoji = "❌"
+                    label = "Не подтверждено"
+
+                text += f"\n\n{emoji} **Совместимость: {compat['percent']}%** ({label})\n"
+                text += f"👍 Подошло: {compat['positive']} | 👎 Не подошло: {compat['negative']}"
 
         # Кнопки обратной связи
         keyboard = [
