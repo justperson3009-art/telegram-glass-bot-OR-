@@ -50,16 +50,48 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         category_name = category_names.get(category, "🔍 Стекло")
 
-        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ (только цена) ===
+        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ (цена + совместимость) ===
         if category == "display":
             first_model = result["models"][0]
+            
+            # Парсим формат: "Xiaomi Redmi 9A/9C/10A — 27 BYN" или "Xiaomi Mi 9 - In-Cell — 45 BYN"
+            price = None
+            display_name = first_model
+            
             if " — " in first_model:
-                full_name, price = first_model.rsplit(" — ", 1)
+                name_part, price_part = first_model.rsplit(" — ", 1)
+                price = price_part
             else:
-                full_name = first_model
-                price = None
-
-            text = f"**{category_name}**\n\n📱 {user_input} — {price}" if price else f"**{category_name}**\n\n📱 {user_input}"
+                name_part = first_model
+            
+            # Убираем "Дисплей " или "Аккумулятор " если есть
+            name_part = name_part.replace("Дисплей ", "").replace("Аккумулятор ", "").strip()
+            
+            # Убираем тип дисплея (- In-Cell, - OR, - OLED и т.д.)
+            import re
+            name_clean = re.sub(r'\s*-\s*(In-Cell|OR|OLED|DD).*?$', '', name_part, flags=re.IGNORECASE).strip()
+            # Убираем скобки с деталями (черная рама) и т.д.
+            name_clean = re.sub(r'\s*\(.*?\)', '', name_clean).strip()
+            
+            # Разбиваем по слэшу — получаем совместимые модели
+            phone_models = [m.strip() for m in name_clean.split("/") if m.strip()]
+            
+            # Формируем ответ
+            text = f"**{category_name}**\n\n"
+            
+            # Искомая модель с ценой
+            if price:
+                text += f"📱 {user_input} — {price}"
+            else:
+                text += f"📱 {user_input}"
+            
+            # Совместимые модели
+            if phone_models:
+                text += "\n\n✅ **Совместимость:**"
+                for model in phone_models:
+                    text += f"\n• {model}"
+            
+            # Пометка про ориентировочную цену
             text += "\n\n💰 **Цена ориентировочная**"
 
         # === ФОРМАТ ДЛЯ АКБ (маркировка + совместимость + цена) ===
