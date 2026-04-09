@@ -225,54 +225,17 @@ def find_compatible_models_in_category(category, user_input):
         # Если не нашли через специальный поиск - идём дальше через обычный поиск
         return _find_in_compatibility_data(compatibility_data, user_input, user_normalized)
 
-    # Для дисплеев используем поисковый индекс
-    if category == "display" and isinstance(data, dict) and "search_index" in data:
-        compatibility = data.get("compatibility", {})
-        search_index = data.get("search_index", {})
-        
-        # Шаг 1: Точное совпадение в индексе
-        if user_normalized in search_index:
-            group_name = search_index[user_normalized]
-            if group_name in compatibility:
-                return {
-                    "found": True,
-                    "models": compatibility[group_name],
-                    "exact_match": True,
-                    "matched_model": compatibility[group_name][0],
-                    "confidence": 1.0
-                }
-        
-        # Шаг 2: Поиск по части запроса в индексе (с приоритетом на точное совпадение)
-        best_match = None
-        best_score = 0
-        
-        for alias, group_name in search_index.items():
-            if user_normalized in alias or alias in user_normalized:
-                if group_name in compatibility:
-                    # Рассчитываем score: чем длиннее совпадение, тем лучше
-                    score = len(user_normalized) / len(alias) if len(alias) > 0 else 0
-                    # Бонус за точное совпадение начала
-                    if alias.startswith(user_normalized):
-                        score += 0.5
-                    
-                    if score > best_score:
-                        best_score = score
-                        best_match = {
-                            "found": True,
-                            "models": compatibility[group_name],
-                            "exact_match": True,
-                            "matched_model": compatibility[group_name][0],
-                            "confidence": 0.95,
-                            "index_match": True
-                        }
-        
-        if best_match:
-            return best_match
-        
-        # Если не нашли в индексе - используем обычный поиск
-        return _find_in_compatibility_data(compatibility, user_input, user_normalized)
+    # === СПЕЦИАЛЬНЫЙ ПОИСК ДЛЯ ДИСПЛЕЕВ (по модели телефона) ===
+    if category == "display":
+        # Для display data = {compatibility: {...}, search_index: {...}}
+        compatibility_data = data.get("compatibility", {}) if isinstance(data, dict) and "compatibility" in data else data
+        display_result = _find_display_by_phone(compatibility_data, user_input)
+        if display_result["found"]:
+            return display_result
+        # Если не нашли — обычный поиск
+        return _find_in_compatibility_data(compatibility_data, user_input, user_normalized)
 
-    # Для остальных категорий - обычный поиск
+    # Для остальных категорий — обычный поиск
     return _find_in_compatibility_data(data, user_input, user_normalized)
 
 
@@ -504,5 +467,153 @@ def _find_battery_by_mark(data, user_input):
                         "confidence": 0.98,
                         "phone_match": True
                     }
-    
+
+    return {"found": False}
+
+
+# === ПОИСК ДИСПЛЕЕВ ПО МОДЕЛИ ТЕЛЕФОНА ===
+
+def _find_display_by_phone(data, user_input):
+    """
+    Ищем дисплей по модели телефона
+    Формат записи: "Xiaomi Redmi 9A/9C/10A — 27 BYN" или "Samsung A55 5G (A556E) - In-Cell — 45 BYN"
+    """
+    user_normalized = normalize_text(user_input)
+    user_words = user_normalized.split()
+
+    # === ШАГ 1: ТОЧНОЕ совпадение по модели телефона ===
+    all_exact_matches = []
+
+    for group_name, models in data.items():
+        for model in models:
+            if " — " in model:
+                phone_part = model.rsplit(" — ", 1)[0].strip()
+            else:
+                phone_part = model.strip()
+            phone_part = re.sub(r'\s*-\s*(In-Cell|OR|OLED).*?$', '', phone_part, flags=re.IGNORECASE).strip()
+            phone_models = [m.strip().lower() for m in phone_part.split("/") if m.strip()]
+
+            for pm in phone_models:
+                first_model = models[0]
+                if " — " in first_model:
+                    fp = first_model.rsplit(" — ", 1)[0].strip()
+                else:
+                    fp = first_model.strip()
+                fp = re.sub(r'\s*-\s*(In-Cell|OR|OLED).*?$', '', fp, flags=re.IGNORECASE).strip()
+                phone_count = len([m.strip() for m in fp.split("/") if m.strip()])
+
+                is_match = False
+                is_exact_eq = False
+
+                if user_normalized == pm:
+                    is_match = True
+                    is_exact_eq = True
+                elif user_normalized in pm:
+                    # Проверяем границы (mi 9 НЕ должно находить mi 9t)
+                    idx = pm.find(user_normalized)
+                    end_idx = idx + len(user_normalized)
+                    if end_idx >= len(pm) or pm[end_idx] in ' /-+()':
+                        if idx == 0 or pm[idx-1] in ' /-+(':
+                            is_match = True
+
+                if is_match:
+                    if is_exact_eq:
+                        # Точное равенство: наивысший приоритет
+                        score = 1000 + phone_count
+                    else:
+                        # Фразовое: чем ближе длина pm к запросу и чем меньше "лишних" слов
+                        len_diff = abs(len(pm) - len(user_normalized))
+                        # Бонус если запрос в КОНЦЕ pm (xiaomi mi 9 → mi 9 это suffix, значит это основная модель)
+                        # Штраф если запрос в НАЧАЛЕ pm (mi 9 lite → lite это модификатор)
+                        if pm.endswith(user_normalized):
+                            bonus = 3  # Большая премия за suffix match
+                        else:
+                            bonus = 0
+                        score = bonus + (phone_count * 0.1) - len_diff
+                    all_exact_matches.append((models, model, score, phone_count))
+                break
+
+    if all_exact_matches:
+        # Разделяем exact_eq и exact_in
+        eq_matches = [(m, mod, s, pc) for m, mod, s, pc in all_exact_matches if s >= 1000]
+        in_matches = [(m, mod, s, pc) for m, mod, s, pc in all_exact_matches if s < 1000]
+
+        # Если есть exact_in с phone_count >= 3 И suffix — он может победить exact_eq с phone_count=1
+        best_in = max(in_matches, key=lambda x: x[3]) if in_matches else None
+        best_eq = max(eq_matches, key=lambda x: x[3]) if eq_matches else None
+
+        if best_in and best_eq and best_in[3] >= 3 and best_eq[3] == 1:
+            # Выбираем exact_in с большей совместимостью
+            best = best_in
+        elif eq_matches:
+            best = max(eq_matches, key=lambda x: x[2])
+        else:
+            best = max(in_matches, key=lambda x: x[2])
+
+        return {
+            "found": True,
+            "models": best[0],
+            "exact_match": True,
+            "matched_model": best[1],
+            "confidence": 1.0,
+            "phone_match": True
+        }
+
+    # === ШАГ 2: Все слова запроса содержатся в модели (brand + model number) ===
+    if len(user_words) >= 1:
+        for group_name, models in data.items():
+            for model in models:
+                if " — " in model:
+                    phone_part = model.rsplit(" — ", 1)[0].strip()
+                else:
+                    phone_part = model.strip()
+                phone_part = re.sub(r'\s*-\s*(In-Cell|OR|OLED).*?$', '', phone_part, flags=re.IGNORECASE).strip()
+                phone_models = [m.strip().lower() for m in phone_part.split("/") if m.strip()]
+
+                for pm in phone_models:
+                    pm_words = pm.split()
+                    if all(w in pm_words for w in user_words):
+                        return {
+                            "found": True,
+                            "models": models,
+                            "exact_match": True,
+                            "matched_model": model,
+                            "confidence": 0.95,
+                            "phone_match": True
+                        }
+
+    # === ШАГ 3: Частичное совпадение (номер модели + бренд) ===
+    number_match = re.search(r'([A-Z]?\d+[A-Z]?(?:\s*Pro\s*Max|Plus|Pro|Lite|SE|FE)?(?:\s*5G)?)', user_normalized, re.IGNORECASE)
+    if number_match:
+        model_number = number_match.group(1).lower().strip()
+        best_match = None
+        best_score = 0
+        for group_name, models in data.items():
+            for model in models:
+                if " — " in model:
+                    phone_part = model.rsplit(" — ", 1)[0].strip()
+                else:
+                    phone_part = model.strip()
+                phone_part = re.sub(r'\s*-\s*(In-Cell|OR|OLED).*?$', '', phone_part, flags=re.IGNORECASE).strip()
+                phone_models = [m.strip().lower() for m in phone_part.split("/") if m.strip()]
+
+                for pm in phone_models:
+                    if model_number in pm:
+                        brand_words = [w for w in user_words if w != model_number]
+                        brand_match = all(any(bw in pm for pm_word in pm.split() if pm_word != model_number) for bw in brand_words)
+                        if brand_match or not brand_words:
+                            score = len(pm)
+                            if score > best_score:
+                                best_score = score
+                                best_match = {
+                                    "found": True,
+                                    "models": models,
+                                    "exact_match": True,
+                                    "matched_model": model,
+                                    "confidence": 0.9,
+                                    "number_match": True
+                                }
+        if best_match:
+            return best_match
+
     return {"found": False}
