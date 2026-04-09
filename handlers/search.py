@@ -51,42 +51,36 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ И АКБ (цена + совместимость) ===
         if category in ("display", "battery"):
-            # Берём первый найденный результат - это искомая модель с ценой
+            # Берём первый найденный результат - это группа моделей с ценой
             first_model = result["models"][0]
-            # Извлекаем название и цену из формата "Xiaomi Redmi 9A/9C/10A — 27 BYN"
-            if " — " in first_model:
-                model_name, price = first_model.rsplit(" — ", 1)
-                text = f"**{category_name}**\n\n📱 {model_name} — {price}"
-            else:
-                # Если формат без цены
-                text = f"**{category_name}**\n\n📱 {first_model}"
-
-            # Добавляем совместимые модели (все кроме первого - это искомая)
-            compatible_models = result["models"][1:] if len(result["models"]) > 1 else result["models"]
             
-            # Фильтруем - убираем дубликаты и саму искомую модель
-            seen_models = set()
-            unique_compatible = []
-            for m in result["models"]:
-                # Извлекаем только название без цены
-                if " — " in m:
-                    clean_name = m.rsplit(" — ", 1)[0].strip()
-                else:
-                    clean_name = m.strip()
-                
-                if clean_name not in seen_models:
-                    seen_models.add(clean_name)
-                    unique_compatible.append(m)
+            # Извлекаем цену из формата "Xiaomi Redmi 9A/9C/10A — 27 BYN"
+            if " — " in first_model:
+                full_name, price = first_model.rsplit(" — ", 1)
+            else:
+                full_name = first_model
+                price = None
 
-            if unique_compatible:
+            # Показываем ТОЛЬКО искомую модель (то что ввёл пользователь)
+            text = f"**{category_name}**\n\n📱 {user_input} — {price}" if price else f"**{category_name}**\n\n📱 {user_input}"
+
+            # Все модели из группы - это совместимые
+            if result["models"]:
                 text += "\n\n✅ **Совместимость:**"
-                for model in unique_compatible:
-                    # Убираем цену для списка совместимости
+                seen_models = set()
+                for model in result["models"]:
+                    # Извлекаем только название без цены
                     if " — " in model:
-                        clean_model = model.rsplit(" — ", 1)[0].strip()
+                        clean_name = model.rsplit(" — ", 1)[0].strip()
                     else:
-                        clean_model = model.strip()
-                    text += f"\n• {clean_model}"
+                        clean_name = model.strip()
+                    
+                    # Разбиваем по слэшу если есть (Redmi 9A/9C/10A → отдельно)
+                    split_models = [m.strip() for m in clean_name.split("/")]
+                    for m in split_models:
+                        if m and m not in seen_models:
+                            seen_models.add(m)
+                            text += f"\n• {m}"
 
             # Пометка про ориентировочную цену
             text += "\n\n💰 **Цена ориентировочная**"
