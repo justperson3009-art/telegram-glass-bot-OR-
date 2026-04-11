@@ -61,7 +61,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text = f"**🖥️ Дисплеи для {user_input}**\n\n"
 
                 if phone_models_list:
-                    text += f"📱 **Модели:**\n"
+                    text += f"📱 **Совместимые модели:**\n"
                     for model in phone_models_list:
                         text += f"• {model}\n"
                     text += "\n"
@@ -128,59 +128,70 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 text += "\n\n💰 **Цена ориентировочная**"
 
-        # === ФОРМАТ ДЛЯ АКБ (маркировка + совместимость + цена) ===
+        # === ФОРМАТ ДЛЯ АКБ (маркировка + модель, БЕЗ совместимости) ===
         elif category == "battery":
-            # Отладка
-            print(f"[DEBUG] АКБ результат: found={result['found']}, models={result.get('models', [])[:2]}")
-            
-            if not result.get("models"):
-                await update.message.reply_text("❌ АКБ не найдены в базе. Попробуйте другую модель.")
-                return
-            
-            first_model = result["models"][0]
-            
-            # Парсим формат: "Аккумулятор Redmi 9A/9C (BN56) — 20 BYN"
-            battery_mark = "—"  # По умолчанию прочерк
-            phone_models = []
-            price = None
-            
-            if " — " in first_model:
-                name_part, price_part = first_model.rsplit(" — ", 1)
-                price = price_part
-                
-                # Извлекаем маркировку из скобок
-                mark_match = re.search(r'\(([^)]+)\)', name_part)
-                if mark_match:
-                    battery_mark = mark_match.group(1)  # Например BN56
-                
-                # Извлекаем модели телефонов (убираем "Аккумулятор " и маркировку)
-                phone_part = name_part.replace("Аккумулятор ", "").strip()
-                if mark_match:
-                    phone_part = phone_part.replace(f"({battery_mark})", "").strip()
-                
-                # Разбиваем по слэшу
-                phone_models = [m.strip() for m in phone_part.split("/") if m.strip()]
-            
-            # Формируем ответ
-            # Показываем искомую модель + маркировку
-            text = f"**{category_name}**\n\n"
-            
-            if battery_mark != "—":
-                text += f"🔋 {user_input} — **{battery_mark}**"
+            # Проверяем новый формат (двусторонний поиск)
+            battery_mark = result.get("battery_mark")
+            phone_models_list = result.get("phone_models", [])
+            price = result.get("price")
+            search_type = result.get("search_type")
+
+            if search_type == "phone_to_battery":
+                # Запрос по модели телефона → показываем маркировку
+                text = f"**🔋 Аккумулятор для {user_input}**\n\n"
+                if battery_mark:
+                    text += f"🔌 **Маркировка батареи:** {battery_mark}"
+                else:
+                    text += f"🔌 **Маркировка:** не указана"
+                if price:
+                    text += f"\n\n💰 **{price}**"
+                text += "\n\n💰 _Цена ориентировочная_"
+            elif search_type == "mark_to_phone":
+                # Запрос по маркировке → показываем модели телефонов
+                text = f"**🔋 Батарея {battery_mark}**\n\n"
+                text += f"📱 **Устанавливается в:**\n"
+                for model in phone_models_list:
+                    text += f"• {model}\n"
+                if price:
+                    text += f"\n💰 **{price}**"
+                text += "\n\n💰 _Цена ориентировочная_"
             else:
-                text += f"🔋 {user_input}"
-            
-            # Совместимые модели
-            if phone_models:
-                text += "\n\n✅ **Совместимость:**"
-                for model in phone_models:
-                    text += f"\n• {model}"
-            
-            # Цена
-            if price:
-                text += f"\n\n💰 **{price}**"
-            
-            text += "\n\n💰 **Цена ориентировочная**"
+                # СТАРЫЙ ФОРМАТ (обратная совместимость)
+                if not result.get("models"):
+                    await update.message.reply_text("❌ АКБ не найдены в базе. Попробуйте другую модель.")
+                    return
+                
+                first_model = result["models"][0]
+                battery_mark_old = "—"
+                phone_models_old = []
+                price_old = None
+
+                if " — " in first_model:
+                    name_part, price_part = first_model.rsplit(" — ", 1)
+                    price_old = price_part
+                    mark_match = re.search(r'\(([^)]+)\)', name_part)
+                    if mark_match:
+                        battery_mark_old = mark_match.group(1)
+                    phone_part = name_part.replace("Аккумулятор ", "").strip()
+                    if mark_match:
+                        phone_part = phone_part.replace(f"({battery_mark_old})", "").strip()
+                    phone_models_old = [m.strip() for m in phone_part.split("/") if m.strip()]
+
+                text = f"**{category_name}**\n\n"
+                if battery_mark_old != "—":
+                    text += f"🔋 {user_input} — **{battery_mark_old}**"
+                else:
+                    text += f"🔋 {user_input}"
+
+                if phone_models_old:
+                    text += "\n\n✅ **Совместимость:**"
+                    for model in phone_models_old:
+                        text += f"\n• {model}"
+
+                if price_old:
+                    text += f"\n\n💰 **{price_old}**"
+
+                text += "\n\n💰 **Цена ориентировочная**"
 
         # === ФОРМАТ ДЛЯ СТЁКОЛ, ЧЕХЛОВ, ОКА ===
         else:

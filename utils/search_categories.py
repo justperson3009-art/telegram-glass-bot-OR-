@@ -219,8 +219,6 @@ def find_compatible_models_in_category(category, user_input):
     if category == "battery":
         # Для battery data = {compatibility: {...}, search_index: {...}}
         compatibility_data = data.get("compatibility", {}) if isinstance(data, dict) and "compatibility" in data else data
-        print(f"[DEBUG] Батарея поиск, тип data: {type(data)}, keys: {list(data.keys()) if isinstance(data, dict) else 'N/A'}")
-        print(f"[DEBUG] compatibility_data keys: {list(compatibility_data.keys())[:3] if compatibility_data else 'EMPTY'}")
         battery_mark_result = _find_battery_by_mark(compatibility_data, user_input)
         if battery_mark_result["found"]:
             return battery_mark_result
@@ -419,55 +417,108 @@ def add_models_smart(category, raw_models_str):
 
 def _find_battery_by_mark(data, user_input):
     """
-    Ищем АКБ:
-    1. По маркировке (BN56, BM41 и т.д.)
-    2. По модели телефона (Redmi 9A, Samsung A55 и т.д.)
+    Двусторонний поиск АКБ:
+    1. Модель телефона → маркировка батареи (Redmi 9 → BN56)
+    2. Маркировка батареи → модель телефона (BN56 → Redmi 9)
     Формат записи: "Аккумулятор Redmi 9A/9C (BN56) — 20 BYN"
+    Или: "Аккумулятор iPhone 11 — 34 BYN" (без маркировки)
     """
     user_normalized = normalize_text(user_input)
-    
-    # === ШАГ 1: Поиск по маркировке (BN56) ===
+
+    # === ШАГ 1: Поиск по модели телефона → показываем маркировку ===
     for group_name, models in data.items():
         for model in models:
-            mark_match = re.search(r'\(([^)]+)\)', model)
-            if mark_match:
-                battery_mark = mark_match.group(1).lower().strip()
-                if user_normalized == battery_mark or user_normalized in battery_mark or battery_mark in user_normalized:
+            # Извлекаем все маркировки из скобок
+            all_marks = re.findall(r'\(([^)]+)\)', model)
+            
+            # Первая скобка = обычно модели, последняя = маркировка батареи
+            # "Аккумулятор Samsung A34/A54 (A346B) (EB-BA546ABY)" → marks = ["A346B", "EB-BA546ABY"]
+            battery_mark = all_marks[-1] if len(all_marks) >= 2 else (all_marks[0] if all_marks else None)
+            
+            # Извлекаем модели телефонов: убираем "Аккумулятор " и все скобки
+            phone_part = model.replace("Аккумулятор ", "").strip()
+            # Убираем все скобки
+            phone_part_clean = re.sub(r'\s*\([^)]+\)', '', phone_part).strip()
+            # Убираем цену
+            if " — " in phone_part_clean:
+                phone_part_clean = phone_part_clean.rsplit(" — ", 1)[0].strip()
+            
+            phone_models = [m.strip().lower() for m in phone_part_clean.split("/") if m.strip()]
+            
+            # Проверяем совпадение с моделью телефона
+            # Берём бренд из первой модели (Samsung, Xiaomi и т.д.)
+            brand_prefix = ""
+            if phone_models:
+                first_pm = phone_models[0]
+                first_word = first_pm.split()[0] if first_pm.split() else ""
+                if first_word and not first_word[0].isdigit():
+                    brand_prefix = first_word + " "
+            
+            for pm in phone_models:
+                is_match = False
+                full_pm = brand_prefix + pm if not pm.startswith(brand_prefix.strip()) else pm
+                
+                if user_normalized == pm or user_normalized == full_pm:
+                    is_match = True
+                elif user_normalized in pm or user_normalized in full_pm:
+                    # Проверяем границы
+                    search_target = pm if user_normalized in pm else full_pm
+                    idx = search_target.find(user_normalized)
+                    end_idx = idx + len(user_normalized)
+                    if end_idx >= len(search_target) or search_target[end_idx] in ' /-+()':
+                        if idx == 0 or search_target[idx-1] in ' /-+(':
+                            is_match = True
+                else:
+                    # Проверяем по ключевым словам (samsung a54 → a54 5g)
+                    user_words = user_normalized.split()
+                    pm_words = full_pm.split()
+                    # Все слова запроса должны быть в pm
+                    if all(any(uw in pw for pw in pm_words) for uw in user_words):
+                        is_match = True
+                
+                if is_match:
+                    price = None
+                    if " — " in model:
+                        price = model.rsplit(" — ", 1)[1].strip()
+                    
                     return {
                         "found": True,
-                        "models": models,
+                        "battery_mark": battery_mark,
+                        "phone_models": [m.strip() for m in phone_part_clean.split("/") if m.strip()],
+                        "price": price,
+                        "full_model": model,
                         "exact_match": True,
                         "matched_model": model,
                         "confidence": 1.0,
-                        "mark_match": True
+                        "search_type": "phone_to_battery"
                     }
-    
-    # === ШАГ 2: Поиск по модели телефона ===
-    # Извлекаем названия телефонов из записей
+
+    # === ШАГ 2: Поиск по маркировке → показываем модель телефона ===
     for group_name, models in data.items():
         for model in models:
-            # Убираем "Аккумулятор " и маркировку в скобках
-            phone_part = model.replace("Аккумулятор ", "").strip()
-            mark_match = re.search(r'\(([^)]+)\)', phone_part)
-            if mark_match:
-                phone_part = phone_part.replace(f"({mark_match.group(1)})", "").strip()
-            # Убираем цену
-            if " — " in phone_part:
-                phone_part = phone_part.rsplit(" — ", 1)[0].strip()
-            
-            # Разбиваем по слэшу - получаем отдельные модели
-            phone_models = [m.strip().lower() for m in phone_part.split("/") if m.strip()]
-            
-            # Проверяем точное совпадение
-            for pm in phone_models:
-                if user_normalized == pm or user_normalized in pm or pm in user_normalized:
+            all_marks = re.findall(r'\(([^)]+)\)', model)
+            for mark in all_marks:
+                mark_lower = mark.lower().strip()
+                if user_normalized == mark_lower or user_normalized in mark_lower or mark_lower in user_normalized:
+                    phone_part = model.replace("Аккумулятор ", "").strip()
+                    phone_part_clean = re.sub(r'\s*\([^)]+\)', '', phone_part).strip()
+                    if " — " in phone_part_clean:
+                        phone_part_clean = phone_part_clean.rsplit(" — ", 1)[0].strip()
+                    
+                    price = None
+                    if " — " in model:
+                        price = model.rsplit(" — ", 1)[1].strip()
+                    
                     return {
                         "found": True,
-                        "models": models,
+                        "battery_mark": mark,
+                        "phone_models": [m.strip() for m in phone_part_clean.split("/") if m.strip()],
+                        "price": price,
+                        "full_model": model,
                         "exact_match": True,
                         "matched_model": model,
-                        "confidence": 0.98,
-                        "phone_match": True
+                        "confidence": 1.0,
+                        "search_type": "mark_to_phone"
                     }
 
     return {"found": False}
