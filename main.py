@@ -145,11 +145,11 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             context.user_data["admin_state"] = "admin_panel"
             text = "👑 **Панель администратора**\n\nВыберите действие:"
             await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
-        elif state and state.startswith("add_"):
+        elif isinstance(state, str) and state.startswith("add_"):
             # Из конкретного добавления → в меню добавления
             context.user_data["admin_state"] = "add_models"
             await admin_handler.show_add_models(update, context)
-        elif state and state.startswith("helper_"):
+        elif isinstance(state, str) and state.startswith("helper_"):
             await admin_handler.show_helpers(update, context)
         elif state in ("issue_reports", "all_issue_reports", "waiting_issue_resolve"):
             # Из жалоб → в админ-панель
@@ -199,7 +199,7 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # 6. Проверяем админ-состояние (ввод данных)
     admin_state = context.user_data.get("admin_state")
-    if admin_state and admin_state not in ("admin_panel", "add_models", "helpers_menu"):
+    if isinstance(admin_state, str) and admin_state not in ("admin_panel", "add_models", "helpers_menu"):
         await admin_handler.handle_admin_input(update, context)
         return
 
