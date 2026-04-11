@@ -219,6 +219,8 @@ def find_compatible_models_in_category(category, user_input):
     if category == "battery":
         # Для battery data = {compatibility: {...}, search_index: {...}}
         compatibility_data = data.get("compatibility", {}) if isinstance(data, dict) and "compatibility" in data else data
+        print(f"[DEBUG] Батарея поиск, тип data: {type(data)}, keys: {list(data.keys()) if isinstance(data, dict) else 'N/A'}")
+        print(f"[DEBUG] compatibility_data keys: {list(compatibility_data.keys())[:3] if compatibility_data else 'EMPTY'}")
         battery_mark_result = _find_battery_by_mark(compatibility_data, user_input)
         if battery_mark_result["found"]:
             return battery_mark_result

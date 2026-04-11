@@ -130,6 +130,13 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # === ФОРМАТ ДЛЯ АКБ (маркировка + совместимость + цена) ===
         elif category == "battery":
+            # Отладка
+            print(f"[DEBUG] АКБ результат: found={result['found']}, models={result.get('models', [])[:2]}")
+            
+            if not result.get("models"):
+                await update.message.reply_text("❌ АКБ не найдены в базе. Попробуйте другую модель.")
+                return
+            
             first_model = result["models"][0]
             
             # Парсим формат: "Аккумулятор Redmi 9A/9C (BN56) — 20 BYN"
