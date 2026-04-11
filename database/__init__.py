@@ -115,21 +115,23 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(user_id)
         )
     """)
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                query TEXT,
-                matched_model TEXT,
-                rating INTEGER,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
-            )
-        """)
-        conn.commit()
-    except:
-        pass  # Таблица уже есть
+
+    # Жалобы — что не подошло с комментарием
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS issue_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            category TEXT,
+            query TEXT,
+            matched_model TEXT,
+            comment TEXT,
+            status TEXT DEFAULT 'pending',
+            admin_response TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+    """)
+    conn.commit()
     
     conn.commit()
     conn.close()
@@ -627,4 +629,85 @@ def get_subscription_stats():
         "active_subscriptions": active_subs,
         "free_users": total_users - active_subs,
         "plans": plans
+    }
+
+
+# === ЖАЛОБЫ (что не подошло) ===
+
+def add_issue_report(user_id, category, query, matched_model, comment):
+    """Добавить жалобу — что не подошло"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO issue_reports (user_id, category, query, matched_model, comment, status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+    """, (user_id, category, query, matched_model, comment))
+    conn.commit()
+    conn.close()
+
+
+def get_pending_issue_reports(limit=20):
+    """Получить необработанные жалобы"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT r.*, u.first_name, u.username
+        FROM issue_reports r
+        LEFT JOIN users u ON r.user_id = u.user_id
+        WHERE r.status = 'pending'
+        ORDER BY r.timestamp DESC
+        LIMIT ?
+    """, (limit,))
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+
+def get_all_issue_reports(limit=50):
+    """Получить все жалобы"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT r.*, u.first_name, u.username
+        FROM issue_reports r
+        LEFT JOIN users u ON r.user_id = u.user_id
+        ORDER BY r.timestamp DESC
+        LIMIT ?
+    """, (limit,))
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+
+def resolve_issue_report(report_id, admin_response=""):
+    """Обработать жалобу — отметить как решённую"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE issue_reports SET status = 'resolved', admin_response = ?
+        WHERE id = ?
+    """, (admin_response, report_id))
+    conn.commit()
+    conn.close()
+
+
+def get_issue_reports_stats():
+    """Статистика жалоб"""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) as total FROM issue_reports")
+    total = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM issue_reports WHERE status = 'pending'")
+    pending = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM issue_reports WHERE status = 'resolved'")
+    resolved = cursor.fetchone()["total"]
+
+    conn.close()
+    return {
+        "total": total,
+        "pending": pending,
+        "resolved": resolved
     }

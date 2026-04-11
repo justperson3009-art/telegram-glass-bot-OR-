@@ -17,7 +17,7 @@ from handlers.start import (
 from handlers.search import (
     search_handler,
     history_callback, popular_callback, back_to_main_callback,
-    feedback_yes_callback, feedback_no_callback
+    feedback_yes_callback, feedback_no_callback, handle_issue_comment, handle_issue_comment_text
 )
 from handlers import admin as admin_handler
 from keyboards import (
@@ -96,6 +96,7 @@ def create_app():
     # Inline callbacks
     app.add_handler(CallbackQueryHandler(feedback_yes_callback, pattern="^feedback_yes_"))
     app.add_handler(CallbackQueryHandler(feedback_no_callback, pattern="^feedback_no_"))
+    app.add_handler(CallbackQueryHandler(handle_issue_comment, pattern="^issue_comment_"))
     app.add_handler(CallbackQueryHandler(history_callback, pattern="^my_history"))
     app.add_handler(CallbackQueryHandler(popular_callback, pattern="^popular_searches"))
     app.add_handler(CallbackQueryHandler(back_to_main_callback, pattern="^back_to_main"))
@@ -150,6 +151,11 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
             await admin_handler.show_add_models(update, context)
         elif state and state.startswith("helper_"):
             await admin_handler.show_helpers(update, context)
+        elif state in ("issue_reports", "all_issue_reports", "waiting_issue_resolve"):
+            # Из жалоб → в админ-панель
+            context.user_data["admin_state"] = "admin_panel"
+            text = "👑 **Панель администратора**\n\nВыберите действие:"
+            await update.message.reply_text(text, reply_markup=get_admin_panel_keyboard(), parse_mode="Markdown")
         else:
             # По умолчанию → в главное меню
             context.user_data.pop("admin_state", None)
@@ -165,6 +171,11 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     # 4. Проверяем отзыв
     if context.user_data.get("waiting_feedback"):
         await handle_feedback(update, context)
+        return
+
+    # 4.1 Проверяем комментарий к жалобе
+    if context.user_data.get("waiting_issue_comment"):
+        await handle_issue_comment_text(update, context)
         return
 
     # 5. Проверяем заблокирован ли
@@ -230,6 +241,10 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.show_unconfirmed_models(update, context)
         return
 
+    if user_input == "📋 Жалобы":
+        await admin_handler.show_issue_reports(update, context)
+        return
+
     if user_input == "👥 Список помощников":
         await admin_handler.list_helpers(update, context)
         return
@@ -245,6 +260,20 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     # Кнопки добавления моделей
+    if user_input == "📊 Все жалобы":
+        await admin_handler.show_all_issue_reports(update, context)
+        return
+
+    # Если в состоянии жалоб — пытаемся разобрать как номер
+    admin_state = context.user_data.get("admin_state")
+    if admin_state == "issue_reports":
+        try:
+            num = int(user_input)
+            await admin_handler.resolve_issue_handler(update, context)
+            return
+        except ValueError:
+            pass  # Не число — идём дальше
+
     if user_input == "🔍 Добавить стёкла":
         await admin_handler.add_glass_handler(update, context)
         return

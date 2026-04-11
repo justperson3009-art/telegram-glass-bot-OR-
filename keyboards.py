@@ -49,6 +49,7 @@ def get_admin_panel_keyboard():
         [KeyboardButton(text="📩 Рассылка")],
         [KeyboardButton(text="🚫 Блок/Разблок")],
         [KeyboardButton(text="⚠️ Неподтверждённые")],
+        [KeyboardButton(text="📋 Жалобы")],
         [KeyboardButton(text="⬅️ Назад")],
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)

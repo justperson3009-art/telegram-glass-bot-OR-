@@ -9,7 +9,9 @@ from database import (
     add_broadcast, get_broadcast_stats, get_popular_searches,
     get_setting, set_setting, get_feedback_stats, get_latest_feedback,
     get_helpers, set_user_role, get_user_role, add_subscription,
-    get_subscription_stats, is_admin as db_is_admin, get_unconfirmed_models
+    get_subscription_stats, is_admin as db_is_admin, get_unconfirmed_models,
+    get_pending_issue_reports, get_all_issue_reports, resolve_issue_report,
+    get_issue_reports_stats
 )
 from utils.search import get_all_groups, add_models_to_group, remove_group
 from utils.search_categories import add_models_smart, load_category, get_category_stats
@@ -23,6 +25,7 @@ from utils.logger import log_broadcast, logger
 WAITING_GROUP_NAME, WAITING_MODELS_LIST, WAITING_BLOCK_USER_ID, WAITING_BROADCAST_TEXT = range(4)
 WAITING_ADD_HELPER_ID, WAITING_REMOVE_HELPER_ID = range(4, 6)
 WAITING_ADD_GLASS, WAITING_ADD_CASE, WAITING_ADD_DISPLAY, WAITING_ADD_BATTERY, WAITING_ADD_OCA = range(6, 11)
+WAITING_ISSUE_RESOLVE = 11
 
 
 def is_admin(user_id):
@@ -402,6 +405,111 @@ def _handle_add_model_smart(update, context, category):
             text += f"\n... и ещё {len(result['models']) - 10}"
         update.message.reply_text(text, reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
     context.user_data["admin_state"] = "add_models"
+
+
+# === ЖАЛОБЫ ===
+
+async def show_issue_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показать необработанные жалобы"""
+    msg = update.message if update.message else getattr(update, 'callback_query', None)
+    if not msg:
+        return
+    send = msg.reply_text if hasattr(msg, 'reply_text') else msg.edit_text
+
+    context.user_data["admin_state"] = "issue_reports"
+
+    stats = get_issue_reports_stats()
+    reports = get_pending_issue_reports(limit=10)
+
+    text = f"📋 **Жалобы пользователей**\n\n"
+    text += f"⏳ Ожидает: **{stats['pending']}**\n"
+    text += f"✅ Решено: **{stats['resolved']}**\n"
+    text += f"📊 Всего: **{stats['total']}**\n\n"
+
+    if not reports:
+        text += "🎉 Нет необработанных жалоб!"
+    else:
+        for i, r in enumerate(reports, 1):
+            cat_emoji = {"glass": "🔍", "display": "🖥️", "battery": "🔋", "case": "📱", "oca": "🧴"}.get(r["category"], "📋")
+            text += (
+                f"**{i}.** {cat_emoji} {r['category']} — {r['query']}\n"
+                f"   👤 @{r.get('username') or r.get('first_name') or 'N/A'}\n"
+                f"   💬 {r['comment'][:80]}\n"
+                f"   🕐 {r['timestamp']}\n\n"
+            )
+
+        text += "💡 **Напишите номер жалобы** чтобы обработать её."
+
+    kb = [
+        [KeyboardButton(text="📊 Все жалобы")],
+        [KeyboardButton(text="⬅️ Назад")],
+    ]
+    await send(text, reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
+
+
+async def show_all_issue_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показать все жалобы"""
+    msg = update.message
+    send = msg.reply_text
+
+    context.user_data["admin_state"] = "all_issue_reports"
+
+    reports = get_all_issue_reports(limit=20)
+
+    if not reports:
+        text = "📭 Жалоб нет."
+    else:
+        text = "📋 **Все жалобы (последние 20):**\n\n"
+        for i, r in enumerate(reports, 1):
+            status_emoji = "✅" if r["status"] == "resolved" else "⏳"
+            cat_emoji = {"glass": "🔍", "display": "🖥️", "battery": "🔋", "case": "📱", "oca": "🧴"}.get(r["category"], "📋")
+            text += (
+                f"**{i}.** {status_emoji} {cat_emoji} {r['category']} — {r['query']}\n"
+                f"   👤 @{r.get('username') or r.get('first_name') or 'N/A'}\n"
+                f"   💬 {r['comment'][:80]}\n"
+                f"   🕐 {r['timestamp']}\n\n"
+            )
+
+    kb = [[KeyboardButton(text="⬅️ Назад")]]
+    await send(text, reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True), parse_mode="Markdown")
+
+
+async def resolve_issue_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка жалобы по номеру"""
+    msg = update.message
+    text_input = msg.text.strip()
+
+    try:
+        report_num = int(text_input)
+    except ValueError:
+        await msg.reply_text("❌ Напишите номер жалобы (число).")
+        return
+
+    reports = get_pending_issue_reports(limit=20)
+    if report_num < 1 or report_num > len(reports):
+        await msg.reply_text(f"❌ Жалобы с номером {report_num} не найдено.")
+        return
+
+    report = reports[report_num - 1]
+    report_id = report["id"]
+
+    # Отмечаем как решённую
+    resolve_issue_report(report_id, admin_response="Обработано администратором")
+
+    cat_emoji = {"glass": "🔍", "display": "🖥️", "battery": "🔋", "case": "📱", "oca": "🧴"}.get(report["category"], "📋")
+
+    await msg.reply_text(
+        f"✅ **Жалоба #{report_num} обработана!**\n\n"
+        f"{cat_emoji} Категория: {report['category']}\n"
+        f"🔎 Запрос: {report['query']}\n"
+        f"👤 Пользователь: @{report.get('username') or report.get('first_name') or 'N/A'}\n"
+        f"💬 Комментарий: {report['comment']}\n\n"
+        "Жалоба отмечена как решённая.",
+        parse_mode="Markdown"
+    )
+
+    # Показываем обновлённый список
+    await show_issue_reports(update, context)
 
 
 def get_admin_handlers():

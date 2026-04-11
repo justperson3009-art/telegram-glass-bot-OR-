@@ -5,7 +5,7 @@ import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from utils.search_categories import find_compatible_models_in_category, get_all_models_count
-from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback, get_model_compatibility
+from database import add_search, increment_user_searches, update_popular_search, get_user_search_history, get_popular_searches, add_feedback, get_model_compatibility, add_issue_report
 from config import get_text, get_partner_link
 from keyboards import get_keyboard_by_role
 from database import get_user_role
@@ -223,10 +223,10 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text += f"\n\n{emoji} **Совместимость: {compat['percent']}%** ({label})\n"
                 text += f"👍 Подошло: {compat['positive']} | 👎 Не подошло: {compat['negative']}"
 
-        # Кнопки обратной связи
+        # Кнопки обратной связи — передаём категорию
         keyboard = [
-            [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{user_input}"),
-             InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{user_input}")],
+            [InlineKeyboardButton("✅ Подошло", callback_data=f"feedback_yes_{category}_{user_input}"),
+             InlineKeyboardButton("❌ Не подошло", callback_data=f"feedback_no_{category}_{user_input}")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -239,14 +239,21 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def feedback_yes_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Пользователь подтвердил что стекло подошло"""
+    """Пользователь подтвердил что подошло"""
     query = update.callback_query
     await query.answer("✅ Спасибо за отзыв!")
 
-    user_input = query.data.replace("feedback_yes_", "")
-    matched = query.message.text.split("\n")[0] if "\n" in query.message.text else user_input
+    # Парсим: feedback_yes_CATEGORY_QUERY
+    data = query.data.replace("feedback_yes_", "", 1)
+    # Первый _ разделяет категорию и запрос
+    parts = data.split("_", 1)
+    if len(parts) == 2:
+        category, user_input = parts
+    else:
+        category = "glass"
+        user_input = data
 
-    add_feedback(update.effective_user.id, user_input, matched, 1)
+    add_feedback(update.effective_user.id, user_input, "", 1)
 
     # Убираем кнопки
     keyboard = [[InlineKeyboardButton("✅ Вы подтвердили", callback_data="ignored")]]
@@ -254,18 +261,111 @@ async def feedback_yes_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def feedback_no_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Пользователь сказал что стекло НЕ подошло"""
+    """Пользователь сказал что НЕ подошло — запрашиваем комментарий"""
     query = update.callback_query
-    await query.answer("❌ Понял, будем улучшать базу!")
 
-    user_input = query.data.replace("feedback_no_", "")
-    matched = query.message.text.split("\n")[0] if "\n" in query.message.text else user_input
+    # Парсим: feedback_no_CATEGORY_QUERY
+    data = query.data.replace("feedback_no_", "", 1)
+    parts = data.split("_", 1)
+    if len(parts) == 2:
+        category, user_input = parts
+    else:
+        category = "glass"
+        user_input = data
 
-    add_feedback(update.effective_user.id, user_input, matched, 0)
+    # Сохраняем данные для комментария
+    context.user_data["issue_category"] = category
+    context.user_data["issue_query"] = user_input
+    context.user_data["issue_matched"] = query.message.text.split("\n")[0] if "\n" in query.message.text else user_input
+    context.user_data["waiting_issue_comment"] = True
+
+    # Обновляем сообщение с просьбой написать комментарий
+    text = (
+        "❌ **Понял, будем улучшать базу!**\n\n"
+        "📝 **Напишите что именно не подошло:**\n"
+        "— Неправильная модель?\n"
+        "— Неверная цена?\n"
+        "— Другая проблема?\n\n"
+        "Опишите подробно — администратор обработает вашу жалобу."
+    )
 
     # Убираем кнопки
-    keyboard = [[InlineKeyboardButton("❌ Отмечено", callback_data="ignored")]]
-    await query.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.edit_text(text, parse_mode="Markdown")
+    await query.answer()
+
+
+async def handle_issue_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка inline кнопки 'Отправить комментарий'"""
+    query = update.callback_query
+    await query.answer("✍️ Напишите ваш комментарий в чат!")
+
+    category = context.user_data.get("issue_category", "glass")
+    issue_query = context.user_data.get("issue_query", "")
+
+    # Убираем состояние ожидания
+    context.user_data.pop("waiting_issue_comment", None)
+
+    # Подсказка
+    text = "✍️ **Напишите ваш комментарий в чат.**\n\nИли нажмите /start для возврата в меню."
+    await query.message.reply_text(text, parse_mode="Markdown")
+
+
+async def handle_issue_comment_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка текстового комментария к жалобе"""
+    user_id = update.effective_user.id
+    comment = update.message.text.strip()
+
+    category = context.user_data.get("issue_category", "glass")
+    issue_query = context.user_data.get("issue_query", "")
+    issue_matched = context.user_data.get("issue_matched", "")
+
+    # Сохраняем жалобу в БД
+    add_issue_report(user_id, category, issue_query, issue_matched, comment)
+
+    # Сбрасываем состояние
+    context.user_data.pop("waiting_issue_comment", None)
+    context.user_data.pop("issue_category", None)
+    context.user_data.pop("issue_query", None)
+    context.user_data.pop("issue_matched", None)
+
+    # Также записываем как feedback=0
+    add_feedback(user_id, issue_query, issue_matched, 0)
+
+    # Подтверждение
+    category_names = {
+        "glass": "🔍 Стёкла",
+        "display": "🖥️ Дисплеи",
+        "battery": "🔋 АКБ",
+        "case": "📱 Чехлы",
+        "oca": "🧴 Переклейка"
+    }
+    cat_label = category_names.get(category, category)
+
+    await update.message.reply_text(
+        f"✅ **Жалоба отправлена!**\n\n"
+        f"📂 Категория: {cat_label}\n"
+        f"🔎 Запрос: {issue_query}\n"
+        f"💬 Комментарий: {comment}\n\n"
+        "Администратор обработает вашу жалобу. Спасибо!"
+    )
+
+    # Уведомление админу
+    from config import ADMIN_ID
+    try:
+        await update.message.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=(
+                f"⚠️ **Новая жалоба!**\n\n"
+                f"👤 Пользователь: {update.effective_user.first_name} (@{update.effective_user.username})\n"
+                f"📂 Категория: {cat_label}\n"
+                f"🔎 Запрос: {issue_query}\n"
+                f"🎯 Найдено: {issue_matched}\n"
+                f"💬 Комментарий: {comment}"
+            ),
+            parse_mode="Markdown"
+        )
+    except:
+        pass
 
 
 async def history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
