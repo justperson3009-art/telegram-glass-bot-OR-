@@ -50,49 +50,83 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         category_name = category_names.get(category, "🔍 Стекло")
 
-        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ (цена + совместимость) ===
+        # === ФОРМАТ ДЛЯ ДИСПЛЕЕВ (ВСЕ варианты: копия/OLED/оригинал + цены) ===
         if category == "display":
-            first_model = result["models"][0]
-            
-            # Парсим формат: "Xiaomi Redmi 9A/9C/10A — 27 BYN" или "Xiaomi Mi 9 - In-Cell — 45 BYN"
-            price = None
-            display_name = first_model
-            
-            if " — " in first_model:
-                name_part, price_part = first_model.rsplit(" — ", 1)
-                price = price_part
+            # Проверяем есть ли display_options (новый формат)
+            display_options = result.get("display_options")
+            phone_models_list = result.get("phone_models", [])
+
+            if display_options:
+                # НОВЫЙ ФОРМАТ — показываем все варианты
+                text = f"**🖥️ Дисплеи для {user_input}**\n\n"
+
+                if phone_models_list:
+                    text += f"📱 **Модели:**\n"
+                    for model in phone_models_list:
+                        text += f"• {model}\n"
+                    text += "\n"
+
+                text += f"💡 **Доступные варианты:**\n\n"
+
+                for i, opt in enumerate(display_options, 1):
+                    dtype = opt["type"]
+                    price = opt["price"]
+                    note = opt.get("note", "")
+
+                    # Определяем эмодзи по типу
+                    type_emoji = {
+                        "OR": "🅾️",
+                        "OLED": "🔵",
+                        "In-Cell": "🟢",
+                        "Стандарт": "⚪",
+                        "AMOLED": "🟣",
+                    }.get(dtype, "📱")
+
+                    # Красивое название типа
+                    type_names = {
+                        "OR": "Оригинал",
+                        "OLED": "OLED копия",
+                        "In-Cell": "In-Cell копия",
+                        "Стандарт": "Стандарт копия",
+                        "AMOLED": "AMOLED копия",
+                    }
+                    type_name = type_names.get(dtype, dtype)
+
+                    text += f"{type_emoji} **{i}. {type_name}** — {price} BYN\n"
+                    if note:
+                        text += f"   _{note}_\n"
+                    text += "\n"
+
+                text += "💰 _Цены ориентировочные_"
             else:
-                name_part = first_model
-            
-            # Убираем "Дисплей " или "Аккумулятор " если есть
-            name_part = name_part.replace("Дисплей ", "").replace("Аккумулятор ", "").strip()
-            
-            # Убираем тип дисплея (- In-Cell, - OR, - OLED и т.д.)
-            import re
-            name_clean = re.sub(r'\s*-\s*(In-Cell|OR|OLED|DD).*?$', '', name_part, flags=re.IGNORECASE).strip()
-            # Убираем скобки с деталями (черная рама) и т.д.
-            name_clean = re.sub(r'\s*\(.*?\)', '', name_clean).strip()
-            
-            # Разбиваем по слэшу — получаем совместимые модели
-            phone_models = [m.strip() for m in name_clean.split("/") if m.strip()]
-            
-            # Формируем ответ
-            text = f"**{category_name}**\n\n"
-            
-            # Искомая модель с ценой
-            if price:
-                text += f"📱 {user_input} — {price}"
-            else:
-                text += f"📱 {user_input}"
-            
-            # Совместимые модели
-            if phone_models:
-                text += "\n\n✅ **Совместимость:**"
-                for model in phone_models:
-                    text += f"\n• {model}"
-            
-            # Пометка про ориентировочную цену
-            text += "\n\n💰 **Цена ориентировочная**"
+                # СТАРЫЙ ФОРМАТ (обратная совместимость)
+                first_model = result["models"][0]
+                price = None
+                display_name = first_model
+
+                if " — " in first_model:
+                    name_part, price_part = first_model.rsplit(" — ", 1)
+                    price = price_part
+                else:
+                    name_part = first_model
+
+                name_part = name_part.replace("Дисплей ", "").replace("Аккумулятор ", "").strip()
+                name_clean = re.sub(r'\s*-\s*(In-Cell|OR|OLED|DD).*?$', '', name_part, flags=re.IGNORECASE).strip()
+                name_clean = re.sub(r'\s*\(.*?\)', '', name_clean).strip()
+                phone_models_list = [m.strip() for m in name_clean.split("/") if m.strip()]
+
+                text = f"**{category_name}**\n\n"
+                if price:
+                    text += f"📱 {user_input} — {price}"
+                else:
+                    text += f"📱 {user_input}"
+
+                if phone_models_list:
+                    text += "\n\n✅ **Совместимость:**"
+                    for model in phone_models_list:
+                        text += f"\n• {model}"
+
+                text += "\n\n💰 **Цена ориентировочная**"
 
         # === ФОРМАТ ДЛЯ АКБ (маркировка + совместимость + цена) ===
         elif category == "battery":
