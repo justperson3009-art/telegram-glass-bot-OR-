@@ -153,49 +153,54 @@ async def update_from_google_sheet(update: Update, context: ContextTypes.DEFAULT
     """Обновить прайс из Google Sheets"""
     import subprocess
     import sys
-    
+    import os
+
     msg = update.message
-    
+
     await msg.reply_text(
         "🔄 **Обновляю прайс из Google Sheets...**\n\n"
         "⏳ Это может занять несколько минут...\n"
         "📦 Буду создан бэкап текущих баз.",
         parse_mode="Markdown"
     )
-    
+
     try:
+        # Определяем директив скрипта автоматически
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.join(script_dir, "..")  # Поднимаемся на уровень вверх
+
         # Запускаем скрипт импорта
         result = subprocess.run(
             [sys.executable, "update_from_google_sheet.py"],
             capture_output=True,
             text=True,
             timeout=300,  # 5 минут таймаут
-            cwd="C:\\Users\\user\\Desktop\\Бот по стеклам"
+            cwd=base_dir
         )
-        
+
         output = result.stdout
         error = result.stderr
-        
+
         if result.returncode == 0:
             # Формируем отчёт
             text = "✅ **Обновление завершено!**\n\n"
-            
+
             # Парсим вывод
             if "Дисплеи:" in output:
                 for line in output.split("\n"):
                     if "Дисплеи:" in line or "АКБ:" in line or "Запчасти:" in line:
                         text += line.strip() + "\n"
-            
+
             text += "\n💾 Бэкап создан в папке `backups/`\n\n"
             text += "⚠️ **Перезапустите бота** для применения изменений!"
-            
+
             await msg.reply_text(text, parse_mode="Markdown")
         else:
             await msg.reply_text(
                 f"❌ **Ошибка обновления:**\n\n```\n{error}\n```",
                 parse_mode="Markdown"
             )
-    
+
     except subprocess.TimeoutExpired:
         await msg.reply_text(
             "❌ **Таймаут!** Обновление заняло слишком много времени.\n"
