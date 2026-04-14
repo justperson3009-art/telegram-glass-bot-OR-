@@ -185,7 +185,7 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     # === КНОПКИ КАТЕГОРИЙ (ПЕРЕД АДМИНКОЙ, чтобы работали всегда) ===
-    if user_input in ("🔍 Подбор стёкол", "📱 Чехлы", "🖥️ Дисплеи", "🔋 АКБ", "🧴 Переклейка"):
+    if user_input in ("🔍 Подбор стёкол", "🖥️ Дисплеи", "🔋 АКБ", "🔧 Запчасти"):
         # Сбрасываем admin_state чтобы не мешал
         context.user_data.pop("admin_state", None)
         await category_button_handler(update, context)
@@ -278,12 +278,6 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.add_glass_handler(update, context)
         return
 
-    if user_input == "📱 Добавить чехлы":
-        context.user_data["admin_state"] = "add_case"
-        context.user_data["add_category"] = "case"
-        await admin_handler.add_chelts_handler(update, context)
-        return
-
     if user_input == "🖥️ Добавить дисплеи":
         context.user_data["admin_state"] = "add_display"
         context.user_data["add_category"] = "display"
@@ -296,10 +290,15 @@ async def handle_main_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_handler.add_battery_handler(update, context)
         return
 
-    if user_input == "🧴 Добавить переклейку":
-        context.user_data["admin_state"] = "add_oca"
-        context.user_data["add_category"] = "oca"
-        await admin_handler.add_oca_handler(update, context)
+    if user_input == "🔧 Добавить запчасти":
+        context.user_data["admin_state"] = "add_parts"
+        context.user_data["add_category"] = "parts"
+        await admin_handler.add_parts_handler(update, context)
+        return
+
+    # Кнопка обновления прайса из Google Sheets
+    if user_input == "🔄 Обновить прайс":
+        await admin_handler.update_from_google_sheet(update, context)
         return
 
     # === КНОПКА ПОМОЩНИКА ===

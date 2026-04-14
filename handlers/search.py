@@ -45,8 +45,7 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "glass": "🔍 Стекло",
             "display": "🖥️ Дисплей",
             "battery": "🔋 Аккумулятор",
-            "case": "📱 Чехол",
-            "oca": "🧴 Стекло для переклейки"
+            "parts": "🔧 Запчасть",
         }
         category_name = category_names.get(category, "🔍 Стекло")
 
@@ -206,8 +205,8 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 clean_model = model.replace(" (цена ориентировочная)", "").strip()
                 text += f"• {clean_model}\n"
 
-        # Получаем рейтинг совместимости (ТОЛЬКО для стёкол/чехлов/ОКА)
-        if category not in ("display", "battery"):
+        # Получаем рейтинг совместимости (ТОЛЬКО для стёкол/запчастей)
+        if category in ("glass", "parts"):
             compat = get_model_compatibility(result["matched_model"])
             if compat["percent"] is not None:
                 if compat["status"] == "confirmed":
@@ -336,8 +335,7 @@ async def handle_issue_comment_text(update: Update, context: ContextTypes.DEFAUL
         "glass": "🔍 Стёкла",
         "display": "🖥️ Дисплеи",
         "battery": "🔋 АКБ",
-        "case": "📱 Чехлы",
-        "oca": "🧴 Переклейка"
+        "parts": "🔧 Запчасти"
     }
     cat_label = category_names.get(category, category)
 

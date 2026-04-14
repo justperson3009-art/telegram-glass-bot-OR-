@@ -44,10 +44,9 @@ async def category_button_handler(update: Update, context: ContextTypes.DEFAULT_
 
     category_map = {
         "🔍 Подбор стёкол": "glass",
-        "📱 Чехлы": "case",
         "🖥️ Дисплеи": "display",
         "🔋 АКБ": "battery",
-        "🧴 Переклейка": "oca",
+        "🔧 Запчасти": "parts",
     }
 
     category = category_map.get(user_input)

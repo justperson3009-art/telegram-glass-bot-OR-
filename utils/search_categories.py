@@ -12,10 +12,9 @@ BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
 # Маппинг категорий на файлы
 CATEGORY_FILES = {
     "glass": "compatibility_glass.json",
-    "case": "compatibility_case.json",
+    "parts": "compatibility_parts.json",
     "display": "compatibility_display.json",
     "battery": "compatibility_battery.json",
-    "oca": "compatibility_oca.json",
 }
 
 

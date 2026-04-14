@@ -54,10 +54,9 @@ async def show_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📦 Групп: **{len(groups)}**\n\n"
         f"📂 **Файлы категорий:**\n"
         f"  • 🔍 Стёкла: **{cat_stats['glass']['models']}** моделей\n"
-        f"  • 📱 Чехлы: **{cat_stats['case']['models']}** моделей\n"
+        f"  • 🔧 Запчасти: **{cat_stats.get('parts', {'models': 0})['models']}** моделей\n"
         f"  • 🖥️ Дисплеи: **{cat_stats['display']['models']}** моделей\n"
-        f"  • 🔋 АКБ: **{cat_stats['battery']['models']}** моделей\n"
-        f"  • 🧴 Переклейка: **{cat_stats['oca']['models']}** моделей\n\n"
+        f"  • 🔋 АКБ: **{cat_stats['battery']['models']}** моделей\n\n"
         f"📈 Активность:\n"
         f"  • Сегодня: **{stats['today_active']}**\n"
         f"  • Неделя: **{stats['week_active']}**\n\n"
@@ -144,6 +143,70 @@ async def add_battery_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data["add_category"] = "battery"
     await _send_simple_add_prompt(update, "🔋 АКБ")
 
+async def add_parts_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Добавить запчасти"""
+    context.user_data["admin_state"] = "add_parts"
+    context.user_data["add_category"] = "parts"
+    await _send_simple_add_prompt(update, "🔧 Запчасти")
+
+async def update_from_google_sheet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обновить прайс из Google Sheets"""
+    import subprocess
+    import sys
+    
+    msg = update.message
+    
+    await msg.reply_text(
+        "🔄 **Обновляю прайс из Google Sheets...**\n\n"
+        "⏳ Это может занять несколько минут...\n"
+        "📦 Буду создан бэкап текущих баз.",
+        parse_mode="Markdown"
+    )
+    
+    try:
+        # Запускаем скрипт импорта
+        result = subprocess.run(
+            [sys.executable, "update_from_google_sheet.py"],
+            capture_output=True,
+            text=True,
+            timeout=300,  # 5 минут таймаут
+            cwd="C:\\Users\\user\\Desktop\\Бот по стеклам"
+        )
+        
+        output = result.stdout
+        error = result.stderr
+        
+        if result.returncode == 0:
+            # Формируем отчёт
+            text = "✅ **Обновление завершено!**\n\n"
+            
+            # Парсим вывод
+            if "Дисплеи:" in output:
+                for line in output.split("\n"):
+                    if "Дисплеи:" in line or "АКБ:" in line or "Запчасти:" in line:
+                        text += line.strip() + "\n"
+            
+            text += "\n💾 Бэкап создан в папке `backups/`\n\n"
+            text += "⚠️ **Перезапустите бота** для применения изменений!"
+            
+            await msg.reply_text(text, parse_mode="Markdown")
+        else:
+            await msg.reply_text(
+                f"❌ **Ошибка обновления:**\n\n```\n{error}\n```",
+                parse_mode="Markdown"
+            )
+    
+    except subprocess.TimeoutExpired:
+        await msg.reply_text(
+            "❌ **Таймаут!** Обновление заняло слишком много времени.\n"
+            "Проверьте интернет-соединение и попробуйте снова."
+        )
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ **Ошибка:**\n\n`{e}`",
+            parse_mode="Markdown"
+        )
+
 async def add_oca_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Добавить переклейку"""
     context.user_data["admin_state"] = "add_oca"
@@ -155,10 +218,8 @@ async def _send_simple_add_prompt(update: Update, category_name: str):
     """Отправить упрощённое сообщение для добавления моделей"""
     kb = [
         [KeyboardButton(text="🔍 Добавить стёкла")],
-        [KeyboardButton(text="📱 Добавить чехлы")],
-        [KeyboardButton(text="🖥️ Добавить дисплеи")],
-        [KeyboardButton(text="🔋 Добавить АКБ")],
-        [KeyboardButton(text="🧴 Добавить переклейку")],
+        [KeyboardButton(text="🖥️ Добавить дисплеи"), KeyboardButton(text="🔋 Добавить АКБ")],
+        [KeyboardButton(text="🔧 Добавить запчасти")],
         [KeyboardButton(text="⬅️ Назад")],
     ]
     await update.message.reply_text(

@@ -8,8 +8,8 @@ def get_main_keyboard():
     """Главное меню пользователя"""
     kb = [
         [KeyboardButton(text="🔍 Подбор стёкол")],
-        [KeyboardButton(text="📱 Чехлы"), KeyboardButton(text="🖥️ Дисплеи")],
-        [KeyboardButton(text="🔋 АКБ"), KeyboardButton(text="🧴 Переклейка")],
+        [KeyboardButton(text="🖥️ Дисплеи"), KeyboardButton(text="🔋 АКБ")],
+        [KeyboardButton(text="🔧 Запчасти")],
         [KeyboardButton(text="👤 Мой статус")],
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -19,8 +19,8 @@ def get_admin_keyboard():
     """Меню администратора"""
     kb = [
         [KeyboardButton(text="🔍 Подбор стёкол")],
-        [KeyboardButton(text="📱 Чехлы"), KeyboardButton(text="🖥️ Дисплеи")],
-        [KeyboardButton(text="🔋 АКБ"), KeyboardButton(text="🧴 Переклейка")],
+        [KeyboardButton(text="🖥️ Дисплеи"), KeyboardButton(text="🔋 АКБ")],
+        [KeyboardButton(text="🔧 Запчасти")],
         [KeyboardButton(text="👤 Мой статус")],
         [KeyboardButton(text="⚡ Управление")],
     ]
@@ -31,8 +31,8 @@ def get_helper_keyboard():
     """Меню помощника"""
     kb = [
         [KeyboardButton(text="🔍 Подбор стёкол")],
-        [KeyboardButton(text="📱 Чехлы"), KeyboardButton(text="🖥️ Дисплеи")],
-        [KeyboardButton(text="🔋 АКБ"), KeyboardButton(text="🧴 Переклейка")],
+        [KeyboardButton(text="🖥️ Дисплеи"), KeyboardButton(text="🔋 АКБ")],
+        [KeyboardButton(text="🔧 Запчасти")],
         [KeyboardButton(text="👤 Мой статус")],
         [KeyboardButton(text="➕ Добавить в базу")],
     ]
@@ -50,6 +50,7 @@ def get_admin_panel_keyboard():
         [KeyboardButton(text="🚫 Блок/Разблок")],
         [KeyboardButton(text="⚠️ Неподтверждённые")],
         [KeyboardButton(text="📋 Жалобы")],
+        [KeyboardButton(text="🔄 Обновить прайс")],
         [KeyboardButton(text="⬅️ Назад")],
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -59,10 +60,8 @@ def get_add_models_keyboard():
     """Меню добавления моделей"""
     kb = [
         [KeyboardButton(text="🔍 Добавить стёкла")],
-        [KeyboardButton(text="📱 Добавить чехлы")],
-        [KeyboardButton(text="🖥️ Добавить дисплеи")],
-        [KeyboardButton(text="🔋 Добавить АКБ")],
-        [KeyboardButton(text="🧴 Добавить переклейку")],
+        [KeyboardButton(text="🖥️ Добавить дисплеи"), KeyboardButton(text="🔋 Добавить АКБ")],
+        [KeyboardButton(text="🔧 Добавить запчасти")],
         [KeyboardButton(text="⬅️ Назад")],
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
