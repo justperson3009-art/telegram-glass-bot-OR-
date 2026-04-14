@@ -192,9 +192,31 @@ async def update_from_google_sheet(update: Update, context: ContextTypes.DEFAULT
                         text += line.strip() + "\n"
 
             text += "\n💾 Бэкап создан в папке `backups/`\n\n"
-            text += "⚠️ **Перезапустите бота** для применения изменений!"
+            text += "🔄 **Перезапускаю бота...**\n"
+            text += "⏳ Подождите 10-15 секунд..."
 
             await msg.reply_text(text, parse_mode="Markdown")
+
+            # Перезапускаем бота через systemd
+            try:
+                subprocess.run(
+                    ["sudo", "systemctl", "restart", "glass-bot"],
+                    capture_output=True,
+                    timeout=30
+                )
+                await msg.reply_text(
+                    "✅ **Бот перезапущен!**\n\n"
+                    "Теперь можно пользоваться поиском в категории **🔧 Запчасти**.\n"
+                    "Дисплеи и АКБ также обновлены!",
+                    parse_mode="Markdown"
+                )
+            except Exception as restart_err:
+                await msg.reply_text(
+                    "⚠️ **Бот обновил данные, но требует ручного перезапуска!**\n\n"
+                    "Выполни на сервере:\n"
+                    "```bash\nsudo systemctl restart glass-bot\n```",
+                    parse_mode="Markdown"
+                )
         else:
             await msg.reply_text(
                 f"❌ **Ошибка обновления:**\n\n```\n{error}\n```",
